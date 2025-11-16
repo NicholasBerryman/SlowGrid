@@ -1,0 +1,171 @@
+
+Logger:
+	Asserts      +
+	Stacktraces  +
+	File log     +
+	Stdout log   +
+
+Basic Data Structures:
+	Local Stack   +
+	Local Queue   +
+	Local Dequeue +
+
+	Depends:
+		cstdint
+
+
+------ TODO Document ^^ ----
+------ TODO Github ^^ ----
+
+
+Allocators:
+	Arena
+	CachedQueue (Within Arena)
+	Data Structures:
+		Heap ULL -> used for Arena
+		Sublifetime Bucket Queue
+		Sublifetime ULL
+
+	Depends:
+		Data Structures
+
+Gameloop:
+	Separate draw from tick from input
+		Callbacks for each
+	Unfixed draw & input, fixed tick
+		Interpolate draw
+		Rate limits on draw & input
+		Separate input thread??
+	Bonus: Turn-based semaphore options??
+
+	Depends: 
+		std::chrono?? ctime??
+
+Grid:
+	Representation:
+		Chunked
+			Flattened Array Chunks
+		Movement Weights
+			Bitfield/byte/word
+		Tile designations/metadata
+	Pathfinding -> p2p and dijkstra matrix:
+		Rooks and queens case
+		Raw:
+			BFS
+			A*:
+				Bucket Queue
+					LIFO or FIFO (DFS or BFS equivalent among equal cost paths)
+			JPS
+		Precompute:
+			JPS+
+			Rectangular symmetry reduction
+			HAA*
+		Precompute generic modifier:
+			Goal Bounding
+		Combine above, based on relaxation of assumptions
+	Spatial Queries:
+		Entities in Range
+		Point in Polygon
+		kNN
+		Change coordinates
+
+		Data Structures:
+			Container:
+				R-Tree?
+					R+??
+					R*??
+				KD-Tree?
+			Polygons:
+				Point
+				Rect
+				N-gon
+	Deffered mutations:
+		Queue on mutate call, exec on 'undefer' call
+		Immediate and deffered modes
+
+	Depends:
+		Allocators
+		Data Structures
+
+Rendering:
+	2D
+	3D
+	Grid coords to screen coords
+	TODO consider
+
+	UI/HUD:
+		TODO consider
+
+	Depends:
+		Raylib
+
+Flecs Interface:
+	ECS-ified Gameloop:
+		Components for draw/tick/interp/etc
+		world.progress as the loop callback
+			#defines to swap between world.progress and pipeline::run (or whatever it's called), for flecs::stats
+		flecs::stats inclusion
+	ECS-ified Rendering:
+		Rendering components & systems
+	ECS-ified Grid:
+		Coordinate components
+		Collision/range/etc components (dontFragment)
+
+	Depends:
+		Flecs
+		Gameloop (optional)
+		Rendering (optional)
+		Grid (optional)
+
+Implementation Goals:
+	Modern:
+		CLion
+		Github
+		C++26
+		Modules (C++20), not just .h (wherever possible)
+			Project should itself be a Module
+		C++ casts instead of C casts (static_cast, reinterpret_cast)
+		Look into cpp23 CRTP??
+		Look at cpp23 Multidimensional operator??
+		Look into cpp20 'Concepts'
+		Look into cpp26 reflection?
+	Cross-Platform:
+		No VirtualAlloc, inline assembly, etc.
+		Able to handle the Raylib EMSCRIPTEN situation
+	Modular:
+		Possibe to build only a minimal subset of modules (e.g. Grid without Rendering/Raylib)
+	Cmake Build System:
+		Defined debug/release/test builds
+		Should be easy for future cmake projects to download/import (from github)
+	Unit Testing:
+		Individual test plans for each submodule (and sub-submodule etc.)
+		Automated testing
+		Profiling & comparisons too
+
+	Compiler workloaded:
+		Templates
+			Look into cpp20 'Concepts'
+		Constexpr
+		Enum Classes (can static_cast to int anyway)
+	Cache-friendly where possible:
+		Limit heap access
+		Limit non-contiguous memory access
+	Type-agnostic:
+		Use typedefs where possible
+		Look into CRTP??
+	Const correct:
+		Reduces chance of accidental 'if (x = y) [not ==]'
+		More thread-safe
+	Documented:
+		Doxygen ('Awesome' theme?)
+
+
+
+On completion:
+	Include github -> licence and proper readme
+
+
+
+Future Refactor/extension:
+	Client-server architecture? Reflection system??
+		Probably should go in a separate module that derives from this one

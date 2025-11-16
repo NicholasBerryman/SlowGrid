@@ -1,0 +1,182 @@
+Grid square representations:
+	Bitfield:
+		No weights
+		n/8 bytes storage -> 1MB ~= 3000x3000
+		Potentially slow access?
+	Byte:
+		1-255 weights
+		n bytes storage   -> 1MB ~= 1000x1000
+		Potentially fast access?
+	Word:
+		A lot of weights
+		4n bytes storage  -> 1MB ~= 250x250
+		Potentially fastest access? Or maye slower than byte??
+		
+Grid representations:
+	Flattened 2d array:
+		Don't even bother with non-flattened array. It's just worse 99.9% of the time
+		O(n) storage -> Stores whole grid world
+		O(1) lookup  -> Just an array index
+		Cache friendly
+		Needs contiguous memory (unless virtual alloc??)
+	Heirarchical subgrid tree:
+		Parent nodes (supergrid):
+			Has height&width
+			Has list of subGrids paired with local origins
+			Converts world coordinates to subGrid + local coordinates 
+			Only overlap/touch their own parent node (if not root) (i.e. islands/caves/etc)
+		Leaves:
+			Flattened 2d array
+		Lookup:
+			Check if/which leaf grid exists -> binary search
+			Convert to leaf grid coords if found
+			Return default value if outside subgrid (e.g. 'blocked')
+		O(x<=n) storage -> Only needs to actually store a subset of the whole world grid
+			O(n) worst cast
+		O(log(n)) lookup if leaf node not known
+		O(1) lookup if leaf node is known -> just an array index
+	
+Breadth First Search:
+	Unweighted grids
+	d -> max distance
+	O(d) memory complexity & o(d^2 * log(d)) time complexity:
+		Keep 3 sets -> AVL trees | (frontier, prev frontier, prev prev frontier)
+			BFS will never try to search beyond those 3 sets (I think)
+			4(d)+4(d-1)+4(d-2) = number of grid addresses to store (plus a bit for AVL tree non-completeness)
+				8 for queen's case
+		Visits up to ~d^2 grid cells -> at least O(d^2) time complexity
+		Must check if a grid cell was already visited:
+			O(log(d)) per cell!
+		Must add each grid cell to visited sets:
+			O(log(d))
+		CAN'T RETURN FULL PATH -> only returns up to first 2 optimal moves to go toward goal
+		CAN'T RETURN FLOW FIELD -> Forgets as frontier expands
+	O(d^2) memory complexity & o(d^2) time complexity:
+		Keep 1 queue -> frontier
+		Keep 1 set -> hashmap (visited)
+			2d^2 = number of grid cells to store
+				4d^2 for queen's case
+		Visits up to ~d^2 grid cells -> at least O(d^2) time complexity
+		Must check if a grid cell was already visited:
+			O(1) per cell
+		CAN RETURN FULL PATH -> retraverse grid backwards when goal found
+			Size of path will be <= d
+		CAN RETURN FLOW FIELD
+	Further considerations:
+		Max memory requirement decreases if max potential search goes off the grid
+			TODO add something to take this into account and reduce memory requirements accordingly
+
+A* Search:
+	Weighted or unweighted grids
+	d -> max distance
+	Worst case equivalent to BFS, but also includes a priority queue
+		If weights are >=1, then this still holds for weighted grids
+	Priority Queue:
+		Probably still max 4d grid cells (or 8d for queen's case)
+			If weights are >=1, then this still holds for weighted grids, I think
+		Consider 'Bucket Queue':
+			Requires integer weights & integer heuristic
+			Weight+heuristic is index within an array
+				Each index points to a stack
+			Array is max length d (or c*d if there's a constant multiplying the heuristic above the real distance)
+			O(1) insert -> adding to frontier
+			O(d) remove-best -> popping from frontier (must determine the second lowest bucket if the current lowest bucket empties)
+				Ends up being O(1) average time
+			O(d^2) space complexity (rook's case) -> whole edge of search iteration could be same distance (d/4), and we need (d) buckets
+				Using the depth-first style via a stack in the buckets might reduce this to linear space in (almost) all cases. Need to test
+			O(d) space complexity (queen's case) -> I'm pretty sure you will (almost) always have a small/limited number of options of the same distance in the frontier at once
+				Maybe try unrolled linked-list of size 8, then do some tests to choose a good size empirically 
+		Alternative is 'Binary Heap':
+			Works for non-integer weights &| heuristic
+			O(log(n)) insert -> adding to frontier
+			O(log(n)) remove best -> popping from frontier
+			O(d) space complexity -> 4d for rook, 8d for queen
+	Dijkstra Matrix:
+		2d^2 (rook) or 4d^2 (queen) cell distances/parents to store
+			If weights are >=1, then this still holds for weighted grids
+		No need to specifically implement Dijkstra's -> Just use a heuristic of 0
+	Early Stopping:
+		When goal reached -> early stop and traverse back from goal to give best path
+		When max distance exceeded -> early stop, find node with best w+h, traverse back to give greedy best path
+		When priority queue emprty -> same as above (I think this might happen if you try and path into a building with no entrance)
+	No good tradeoffs -> always at least O(d^2) space and O(d^2) time for the worst case performance
+	
+Jump Point Search:
+	Unweighted Grids
+	d -> max distance
+	Worst Case:
+		Dijkstra matrix same size as A*
+		Frontier queue half the size of A*
+	Average Case:
+		Reduces number of 'visited' checks
+		Reducts number of operations & size of priority queue
+			Could potentially save some memory in most cases by using unrolled linked lists in the queue
+	Can still make Dijkstra matrices
+	Tends to find straight paths -> look nicer
+	
+JPS+:
+	Slowly changing grid
+	Applied on top of JPS
+	Algorithm:
+		Visits each square, determines if it's a jump point and from what directions
+		From each jump point, iterates away from it in its direction, and assigns a distance to that nearest jump point
+			Resets count on hitting another jump point in that same direction
+	O(n) added space complexity -> Needs 4 (rooks) or 8 (queens) values per grid cell
+	O(n) added time complexity -> Must iterate over entire grid
+	Slower than raw JPS unless a lot of JPS calls happen between recomputes
+	Should be possible to partially/incrementally recompute when terrain changes (i.e. not just fully recompute):
+		Probably not worth just for enemy movement, but possibly worth when environment changes
+
+Goal Bounding:
+	Unchanging grid
+	Applied on top of ANY grid pathfinding
+	Consider circular and rectangular goal bounding and test
+	Algorithm:
+		Visits each square
+		Calculates a Dijkstra matrix for each neighbour of that square
+		Assigns an 'optimal bound' to each neighbour 
+			Bounding polygon 
+			Encomposes all square in search range that can be optimally reached by going through that square from the visited square
+	O(n) space complexity -> needs a polygon polygon perimeter point list for each edge of each node
+		4 values per list for a square, 2 for a circle
+	O(n^2) time complexity -> runs Dijkstra/A* starting from every square in grid
+
+Rectangular Symmetry Reduction:
+	Unchanging weighted or unweighted grids
+	d -> max distance
+	TODO
+
+HAA*:
+	Unchanging weighted or unweighted grids
+	Larger unit sizes
+	d -> max distance
+	TODO
+
+Heirarchical Searches:
+	Applied on top of ANY grid pathfinding
+	TODO
+
+Relaxing search:
+	Algorithm:
+		Repeat:
+			Check for precomputations, fallback to no precomputation
+			Start with more performant search
+			Check final path to see if assumption violated
+			Fallback to slower search
+	For uniform cost grid:
+		Goal Bounding -> No goalbounding
+		JPS+ -> JPS -> done
+	For non-uniform cost grid:
+		Goal Bounding -> No goalbounding
+		JPS+ -> JPS -> RSR -> A* -> done
+	For large units:
+		Goal Bounding -> no goalbounding
+		HAA* -> A* -> done
+	
+	Near-optimal and faster:
+		Try fast method e.g. JPS+
+		Check for violation in range e.g. goblin blocking path in 5 steps
+		Perform JPS/A* with small max distance e.g. 10, with goal being just to get back on path
+			Will walk around goblin and continue the initial optimal path
+			Will stop at a door and wait for you to open it
+				Maybe add door locations to rooms so we can iteratively check all of them for optimal paths 

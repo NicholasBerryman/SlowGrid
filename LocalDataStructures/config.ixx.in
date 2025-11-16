@@ -1,0 +1,10 @@
+//
+// Created by nickberryman on 14/11/25.
+//
+module;
+#include <cstdint>
+#define SIZE_LOCAL_T ${SIZE_LOCAL_T}
+export module LocalDataStructureConfigs;
+
+export typedef SIZE_LOCAL_T localSize_t;
+
