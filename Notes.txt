@@ -13,11 +13,6 @@ Basic Data Structures:
 	Depends:
 		cstdint
 
-
------- TODO Document ^^ ----
------- TODO Github ^^ ----
-
-
 Allocators:
 	Arena
 	CachedQueue (Within Arena)
@@ -97,7 +92,9 @@ Rendering:
 		TODO consider
 
 	Depends:
-		Raylib
+		Raylib? SDL?
+
+
 
 Flecs Interface:
 	ECS-ified Gameloop:

@@ -7,6 +7,11 @@ export module LocalDataStructures:Dequeue;
 import LocalDataStructureConfigs;
 import Logger;
 namespace LocalDataStructures {
+    /**
+     * Double ended queue with local (non-heap deferred) storage
+     * @tparam T Data type of elements
+     * @tparam size Maximum number of elements
+     */
     export template<typename T, localSize_t size> class Dequeue {
     private:
         localSize_t tail = 0;
@@ -49,6 +54,11 @@ localSize_t LocalDataStructures::Dequeue<T, size>::wrapSubtract(const localSize_
     return size-diff;
 }
 
+
+/**
+ * Add item to end of Queue
+ * @param value Item to add (copies)
+ */
 template<typename T, localSize_t size>
 void LocalDataStructures::Dequeue<T, size>::push_back(const T value) {
     Logging::assert_except(len < size);
@@ -58,6 +68,10 @@ void LocalDataStructures::Dequeue<T, size>::push_back(const T value) {
     len++;
 }
 
+/**
+ * Add item to front of Queue
+ * @param value Item to add (copies)
+ */
 template<typename T, localSize_t size>
 void LocalDataStructures::Dequeue<T, size>::push_front(const T value) {
     Logging::assert_except(len < size);
@@ -67,6 +81,11 @@ void LocalDataStructures::Dequeue<T, size>::push_front(const T value) {
     len++;
 }
 
+
+/**
+ * Returns and removes item from queue (FIFO)
+ * @return Item at end of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Dequeue<T, size>::pop_front() {
     Logging::assert_except(len > 0);
@@ -75,6 +94,10 @@ T LocalDataStructures::Dequeue<T, size>::pop_front() {
     return impl[head];
 }
 
+/**
+ * Returns and removes item from queue (LIFO)
+ * @return Item at end of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Dequeue<T, size>::pop_back() {
     Logging::assert_except(len > 0);
@@ -83,16 +106,31 @@ T LocalDataStructures::Dequeue<T, size>::pop_back() {
     return impl[tail];
 }
 
+/**
+ * Return *copy of* item from front of queue with offset. Does not remove.
+ * @param skip Offset from front of queue. Default is 0 (FIFO)
+ * @return Item at offset from front of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Dequeue<T, size>::peek_front(const localSize_t skip) {
     return peekRef_front(skip);
 }
 
+/**
+ * Return *copy of* item from back of queue with offset. Does not remove.
+ * @param skip Offset from back of queue. Default is 0 (LIFO)
+ * @return Item at offset from back of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Dequeue<T, size>::peek_back(const localSize_t skip) {
     return peekRef_back(skip);
 }
 
+/**
+ * Return *reference to* item from front of queue with offset. Does not remove.
+ * @param skip Offset from front of queue. Default is 0 (FIFO)
+ * @return Item at offset from front of queue
+ */
 template<typename T, localSize_t size>
 T & LocalDataStructures::Dequeue<T, size>::peekRef_front(const localSize_t skip) {
     localSize_t i = (head + 1 + skip)%size;
@@ -100,6 +138,11 @@ T & LocalDataStructures::Dequeue<T, size>::peekRef_front(const localSize_t skip)
     return impl[i];
 }
 
+/**
+ * Return *reference to* item from back of queue with offset. Does not remove.
+ * @param skip Offset from back of queue. Default is 0 (LIFO)
+ * @return Item at offset from back of queue
+ */
 template<typename T, localSize_t size>
 T & LocalDataStructures::Dequeue<T, size>::peekRef_back(const localSize_t skip) {
     localSize_t i = (wrapSubtract(tail,1+skip));
@@ -107,6 +150,9 @@ T & LocalDataStructures::Dequeue<T, size>::peekRef_back(const localSize_t skip) 
     return impl[i];
 }
 
+/**
+ * Sets queue to empty
+ */
 template<typename T, localSize_t size>
 void LocalDataStructures::Dequeue<T, size>::clear() {
     head = 0;
@@ -114,11 +160,19 @@ void LocalDataStructures::Dequeue<T, size>::clear() {
     len  = 0;
 }
 
+/**
+ *
+ * @return Maximum number of elements supported by this queue
+ */
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Dequeue<T, size>::maxLength() {
     return size;
 }
 
+/**
+ *
+ * @return Number of elements in the queue
+ */
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Dequeue<T, size>::length() const {
     return len;

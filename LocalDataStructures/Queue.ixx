@@ -7,6 +7,11 @@ export module LocalDataStructures:Queue;
 import LocalDataStructureConfigs;
 import Logger;
 namespace LocalDataStructures {
+    /**
+     * Queue (FIFO) with local (non heap-deferred) storage
+     * @tparam T Data type of elements
+     * @tparam size Maximum number of elements
+     */
     export template<typename T, localSize_t size> class Queue {
     private:
         localSize_t tail = 0;
@@ -44,6 +49,11 @@ localSize_t LocalDataStructures::Queue<T, size>::wrapSubtract(const localSize_t 
     return size-1;
 }
 
+
+/**
+ * Add item to end of Queue
+ * @param value Item to add (copies)
+ */
 template<typename T, localSize_t size>
 void LocalDataStructures::Queue<T, size>::push(const T value) {
     Logging::assert_except(len < size);
@@ -52,6 +62,11 @@ void LocalDataStructures::Queue<T, size>::push(const T value) {
     len++;
 }
 
+
+/**
+ * Returns and removes item from queue (FIFO)
+ * @return Item at end of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Queue<T, size>::pop() {
     Logging::assert_except(len > 0);
@@ -61,11 +76,21 @@ T LocalDataStructures::Queue<T, size>::pop() {
     return out;
 }
 
+/**
+ * Return *copy of* item from front of queue with offset. Does not remove.
+ * @param skip Offset from front of queue. Default is 0 (FIFO)
+ * @return Item at offset from front of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Queue<T, size>::peek(const localSize_t skip) {
     return peekRef(skip);
 }
 
+/**
+ * Return *reference to* item from front of queue with offset. Does not remove.
+ * @param skip Offset from front of queue. Default is 0 (FIFO)
+ * @return Item at offset from front of queue
+ */
 template<typename T, localSize_t size>
 T & LocalDataStructures::Queue<T, size>::peekRef(const localSize_t skip) {
     localSize_t i = (head + skip)%size;
@@ -73,6 +98,10 @@ T & LocalDataStructures::Queue<T, size>::peekRef(const localSize_t skip) {
     return impl[i];
 }
 
+/**
+ * Returns and removes item from queue (LIFO)
+ * @return Item at end of queue
+ */
 template<typename T, localSize_t size>
 T LocalDataStructures::Queue<T, size>::pop_back() {
     Logging::assert_except(len > 0);
@@ -81,6 +110,9 @@ T LocalDataStructures::Queue<T, size>::pop_back() {
     return impl[tail];
 }
 
+/**
+ * Sets queue to empty
+ */
 template<typename T, localSize_t size>
 void LocalDataStructures::Queue<T, size>::clear() {
     head = 0;
@@ -88,11 +120,19 @@ void LocalDataStructures::Queue<T, size>::clear() {
     len  = 0;
 }
 
+/**
+ *
+ * @return Maximum number of elements supported by this queue
+ */
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Queue<T, size>::maxLength() {
     return size;
 }
 
+/**
+ *
+ * @return Number of elements in the queue
+ */
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Queue<T, size>::length() const {
     return len;
