@@ -1,0 +1,53 @@
+
+SlowGrid plan:
+	- Add Allocator module/sub-library
+		- Adjust Arena to use ULL and LocalDataStructures::Stack
+			- Attorney/Client pattern for fast sublifetimes
+		- Adjust cachedQueue to use 'LocalDataStructures::Queue'
+	
+	- Make 'SlowGrid Benchmarks' Project
+		- Executable, not library
+		- For now just benchmark:
+			- 'new' vs Arena.alloc()
+			- LocalDataStructure::Queue vs std::Queue vs Allocator::CachedQueue
+			- LocalDataStructures::Stack vs std::Stack
+			- LocalDataStructure::Dequeue vs std::Dequeue
+			- Allocator::ULL vs std::Vector
+		- General test ideas:
+			- On small amounts of small data
+			- On small amounts of large data (e.g. structs of non-heap arrays)
+			- On large amounts of small data
+			- On large amounts of large data
+		- Compiler optimisation:
+			- Run in o3 mode
+			- Force inclusion of benchmarking code -> Don't let it get optimised out of compilation
+			- Consider Google Benchmarking library:
+				- Should also be able to take into account things like 'branch prediction learning a pattern'
+	
+	- Add Pathfinding
+		- Maps -> Alogrithms -> add to benchmarks
+	
+	- Add Spatial Queries
+		- Trees -> add to benchmarks
+
+	- Add Gameloop
+		- Timer sub-module:
+			- Don't use Chrono except as fallback -> Warn if this happens
+			- Windows -> QueryPerformanceCounter(), QueryPerformanceFrequency()
+			- Linux   -> clock_gettime(CLOCK_MONOTONIC), clock_getres(CLOCK_MONOTONIC)
+			- GBA     -> REG_TMxD (x=[0,1,2])
+		- No FLECS interface yet
+	
+	- Add Input system
+		- Raylib -> input queue
+		- Add recordable input macros (new module -> depends on Input and Gameloop)
+	
+	- Add FLECS interface
+
+	- Github Action output compiled binaries?? artifacts???
+
+	- Add cross-compilation???
+		- Linux/Windows -> DevkitArm
+			- Separate parameters for: NX, (3DS), (DS), GBA
+
+

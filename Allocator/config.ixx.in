@@ -1,0 +1,16 @@
+//
+// Created by nickberryman on 1/12/25.
+//
+module;
+#include <cstdint>
+#define ARENA_SIZE_T ${ARENA_SIZE_T}
+#define SUBLIFETIME_DEPTH_T ${SUBLIFETIME_DEPTH_T}
+#define CACHEQUEUE_CACHESIZE_T ${CACHEQUEUE_CACHESIZE_T}
+export module SG_AllocatorConfigs;
+
+export namespace SG_Allocator {
+    typedef ARENA_SIZE_T arenaSize_t;
+    typedef SUBLIFETIME_DEPTH_T sublifetimeDepth_t;
+    typedef CACHEQUEUE_CACHESIZE_T cacheSize_t;
+}
+

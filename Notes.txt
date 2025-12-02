@@ -17,9 +17,9 @@ Allocators:
 	Arena
 	CachedQueue (Within Arena)
 	Data Structures:
-		Heap ULL -> used for Arena
+		Heap ULL -> used for Arena +
+		Sublifetime ULL +
 		Sublifetime Bucket Queue
-		Sublifetime ULL
 
 	Depends:
 		Data Structures
@@ -122,6 +122,7 @@ Implementation Goals:
 		Modules (C++20), not just .h (wherever possible)
 			Project should itself be a Module
 		C++ casts instead of C casts (static_cast, reinterpret_cast)
+		Look into cpp17 '#if __has_include ...'
 		Look into cpp23 CRTP??
 		Look at cpp23 Multidimensional operator??
 		Look into cpp20 'Concepts'
@@ -149,7 +150,7 @@ Implementation Goals:
 		Limit non-contiguous memory access
 	Type-agnostic:
 		Use typedefs where possible
-		Look into CRTP??
+		CRTP or similar for compile-time polymorphism
 	Const correct:
 		Reduces chance of accidental 'if (x = y) [not ==]'
 		More thread-safe

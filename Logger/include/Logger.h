@@ -10,7 +10,7 @@
 {bool b = false; \
 try { x } \
 catch (std::runtime_error& e) {  b = true; } \
-Logging::assert_abort(b);}
+Logging::assert_except(b);}
 
 
 #define LOGGER_TRACE std::string( __FILE__ ) \
