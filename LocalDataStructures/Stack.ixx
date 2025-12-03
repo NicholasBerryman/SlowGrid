@@ -13,6 +13,7 @@ namespace LocalDataStructures {
      * @tparam size Maximum number of elements
      */
     export template<typename T, localSize_t size> class Stack {
+        static_assert(size > 0, "Size must be larger than 0");
     private:
         localSize_t stackPointer = 0;
         T impl[size];
@@ -28,9 +29,6 @@ namespace LocalDataStructures {
         [[nodiscard]] static inline localSize_t maxLength();
         [[nodiscard]] inline localSize_t length() const;
 
-#ifndef NDEBUG
-        Stack() { Logging::assert_except(size > 0); }
-#endif
     };
 }
 

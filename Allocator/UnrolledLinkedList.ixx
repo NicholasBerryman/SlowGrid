@@ -4,6 +4,7 @@
 
 module;
 #include <type_traits>
+
 export module SG_Allocator:UnrolledLinkedList;
 import :BaseArena;
 import SG_AllocatorConfigs;
@@ -15,9 +16,9 @@ export namespace SG_Allocator {
 	class NodeExaminer;
 
 	/**
-	 * @brief Heterogenous unrolled doubly-linked list, with arena allocation support
+	 * @brief Heterogeneous unrolled doubly-linked list, with arena allocation support
 	 * 
-	 * @tparam InsideArenaType Arena type to allocated blocks into (PseudoArena if head allocation preferred)
+	 * @tparam InsideArenaType Arena type to allocated blocks into (PseudoArena if heap allocation preferred)
 	 * @tparam alignment Data type to use for element size. e.g. char gives 1 byte per element, uint64_t give 4 bytes per element.
 	 */
     template<typename InsideArenaType, typename alignment = char>
@@ -48,7 +49,7 @@ export namespace SG_Allocator {
     	};
 
         InsideArenaType& arena;
-        Node root;
+        Node* root;
         Node* tail;
         arenaSize_t _length;
         arenaSize_t size;
@@ -112,11 +113,12 @@ SG_Allocator::ULL<InsideArenaType, alignment>::ULL(InsideArenaType& arena, const
 	Logging::assert_except(blockSize > 0);
     _length = 0;
     size = initialSize;
-    root.next = nullptr;
-    root.previous = nullptr;
-    root.arr = arena.template allocArray<alignment>(blockSize);
-    root.remainingSpace = blockSize;
-    tail = &root;
+	root = arena.template alloc<Node>();
+    root->next = nullptr;
+    root->previous = nullptr;
+    root->arr = arena.template allocArray<alignment>(blockSize);
+    root->remainingSpace = blockSize;
+    tail = root;
 }
 
 
@@ -144,7 +146,7 @@ template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::ULL<InsideArenaType, alignment>::clear(){
 	_length = 0;
-	root.remainingSpace = blockSize;
+	root->remainingSpace = blockSize;
 	shrink();
 }
 
@@ -156,8 +158,8 @@ template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::ULL<InsideArenaType, alignment>::softClear(){
 	_length = 0;
-	root.remainingSpace = blockSize;
-	tail = &root;
+	root->remainingSpace = blockSize;
+	tail = root;
 }
 
 /**
@@ -172,7 +174,7 @@ void SG_Allocator::ULL<InsideArenaType, alignment>::expand(const arenaSize_t new
 	Node* n = tail;
 	while (size < newSize){
 		if (n->next == nullptr) {
-			n->next = arena.template alloc<Node>();
+			n->next = arena.template allocConstruct<Node>();
 			n->next->previous = n;
 			n->next->next = nullptr;
 			n->next->arr = arena.template allocArray<alignment>(blockSize);
@@ -273,7 +275,7 @@ template<typename T>
 T* SG_Allocator::ULL<InsideArenaType, alignment>::get(const arenaSize_t index) {
 	Logging::assert_except(index < _length);
 	arenaSize_t i = 0;
-	Node* n = &root;
+	Node* n = root;
 	while ((index - i) >= blockSize) {
 		Logging::assert_except(n->next != nullptr);
 		n = n->next;

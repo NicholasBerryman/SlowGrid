@@ -11,7 +11,7 @@ import SG_Allocator;
 
 template <typename a, typename align>
 void testULL(){
-    SG_Allocator::PseudoArena myHeap;
+    a myHeap;
     SG_Allocator::ULL<a, align> ull(myHeap, 3);
 
     // Test alloc
@@ -116,6 +116,9 @@ void testULL(){
 int main(int, char**) {
     testULL<SG_Allocator::PseudoArena, char>();
     testULL<SG_Allocator::PseudoArena, uint64_t>();
+
+    testULL<SG_Allocator::Arena_ULL<1000,3>, char>();
+    testULL<SG_Allocator::Arena_ULL<32,3>, uint64_t>();
     return 0;
 }
 

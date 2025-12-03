@@ -1,10 +1,5 @@
 
 SlowGrid plan:
-	- Add Allocator module/sub-library
-		- Adjust Arena to use ULL and LocalDataStructures::Stack
-			- Attorney/Client pattern for fast sublifetimes
-		- Adjust cachedQueue to use 'LocalDataStructures::Queue'
-	
 	- Make 'SlowGrid Benchmarks' Project
 		- Executable, not library
 		- For now just benchmark:

@@ -13,6 +13,7 @@ namespace LocalDataStructures {
      * @tparam size Maximum number of elements
      */
     export template<typename T, localSize_t size> class Dequeue {
+        static_assert(size > 0, "Size must be larger than 0");
     private:
         localSize_t tail = 0;
         localSize_t head = 0;
@@ -37,9 +38,6 @@ namespace LocalDataStructures {
         [[nodiscard]] static inline localSize_t maxLength();
         [[nodiscard]] inline localSize_t length() const;
 
-#ifndef NDEBUG
-        Dequeue() { Logging::assert_except(size > 0); }
-#endif
     };
 }
 

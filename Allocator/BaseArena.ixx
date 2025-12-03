@@ -14,6 +14,8 @@ export namespace SG_Allocator {
     public:
         template<typename T> inline T* alloc(){Logging::assert_except(0); return nullptr;};
         template<typename T> inline T* allocArray(arenaSize_t arrayLength){Logging::assert_except(0); return nullptr;};
+		template<typename T, typename... ConstructorArgs> inline T* allocConstruct(ConstructorArgs... args){Logging::assert_except(0); return nullptr;};
+		template<typename T, typename... ConstructorArgs> inline T* allocConstructArray(arenaSize_t arrayLength, ConstructorArgs... args){Logging::assert_except(0); return nullptr;};
         inline void sublifetime_open(){Logging::assert_except(0);};
         inline void sublifetime_rollback(){Logging::assert_except(0);};
         inline void sublifetime_softRollback(){Logging::assert_except(0);};

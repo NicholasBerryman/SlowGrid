@@ -1,9 +1,9 @@
 
 ### Configs ###
 set(ARENA_SIZE_T "std::uint32_t" CACHE STRING "Type for max Arena size" )
-set(SUBLIFETIME_DEPTH_T "std::uint_fast8_t" CACHE STRING "Type for max number of alive Arena sublifetimes" )
-set(CACHEQUEUE_CACHESIZE_T "std::uint_fast8_t" CACHE STRING "Type for max number of cached CachedQeueue elements" )
+set(DISABLE_NONFUNDAMENTAL_ALLOC "1" CACHE STRING "Type for max Arena size" )
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.ixx.in" "${CMAKE_CURRENT_SOURCE_DIR}/config.ixx")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/Allocator.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/Allocator.h")
 
 ### Library Files ###
 add_library(SG_Allocator)
@@ -15,7 +15,7 @@ target_sources(SG_Allocator
         BaseArena.ixx
         UnrolledLinkedList.ixx
         PseudoArena.ixx
-        #Arena.ixx
-        #CachedQueue.ixx
+        Arena_ULL.ixx
+        CachedQueue.ixx
 )
 target_link_libraries(SG_Allocator PRIVATE LocalDataStructures)

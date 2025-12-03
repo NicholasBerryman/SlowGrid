@@ -6,4 +6,5 @@ export module LocalDataStructures;
 export import :Stack;
 export import :Queue;
 export import :Dequeue;
+export import LocalDataStructureConfigs;
 
