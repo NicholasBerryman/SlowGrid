@@ -26,3 +26,9 @@ target_sources(SlowGrid
 ENABLE_TESTING()
 ADD_SUBDIRECTORY(tests)
 
+
+### Custom Build Types ###
+set(CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT "-g -O3" CACHE STRING
+ "Flags used by the C++ compiler during RelWithDebugAndAssert builds."
+  FORCE)
+mark_as_advanced(CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT)
