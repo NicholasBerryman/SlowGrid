@@ -1,7 +1,7 @@
 
 ### Configs ###
 set(ARENA_SIZE_T "std::uint32_t" CACHE STRING "Type for max Arena size" )
-set(DISABLE_NONFUNDAMENTAL_ALLOC "1" CACHE STRING "Type for max Arena size" )
+set(DISABLE_NONFUNDAMENTAL_ALLOC "1" CACHE STRING "When set - prevents compilation when non-contructor allocator called on non-fundamental/trivial/pointer type" )
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.ixx.in" "${CMAKE_CURRENT_SOURCE_DIR}/config.ixx")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/Allocator.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/Allocator.h")
 
