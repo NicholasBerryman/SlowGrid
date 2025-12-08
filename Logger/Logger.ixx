@@ -15,6 +15,9 @@ module;
 
 export module Logger;
 
+// NOTE: EMPTY FUNCTION CALLS DON'T ALWAYS GET REMOVED EVEN IN O3?? -> Use macros in Logger.h that call these functions with ifndef NDEBUG
+
+
 namespace Logging {
     bool init = false;
     std::string trace() {
@@ -27,9 +30,7 @@ namespace Logging {
      * @param condition
      */
     export void assert_except(const bool condition) {
-#ifndef NDEBUG
         if (!condition) throw std::runtime_error(trace());
-#endif
     }
 
     /**
@@ -38,7 +39,6 @@ namespace Logging {
      * @param source log filename
      */
     export void assert_log(const bool condition, const std::string &source) {
-#ifndef NDEBUG
         if (!init) {
             init = true;
             std::ofstream(F_LOG);
@@ -58,13 +58,10 @@ namespace Logging {
             LogFile.close();
 #endif
         }
-#endif
     }
 
     export void assert_abort(const bool condition) {
-#ifndef NDEBUG
         assert(condition);
-#endif
     }
 
     /**
@@ -73,7 +70,6 @@ namespace Logging {
      * @param source log filename
      */
     export void writeLog(const char* msg, const std::string &source) {
-#ifndef NDEBUG
         if (!init) {
             init = true;
             std::ofstream(F_LOG);
@@ -89,7 +85,6 @@ namespace Logging {
             msg << std::endl;
 #ifndef LOG_TO_STD
         LogFile.flush();
-#endif
 #endif
     }
 }

@@ -24,7 +24,10 @@ export namespace SG_Allocator {
 	template<arenaSize_t blockSize, localSize_t maxSublifetimes>
     class Arena_ULL : private BaseArena {
         static_assert(blockSize > 0, "Blocksize must be > 0");
+
         public:
+		Arena_ULL();
+
     	template<typename T> inline T* alloc();
     	template<typename T> inline T* allocArray(const arenaSize_t arrayLength);
 		template<typename T, typename... ConstructorArgs> inline T* allocConstruct(ConstructorArgs... args);
@@ -44,7 +47,6 @@ export namespace SG_Allocator {
     	template<typename T> inline void softDelete(T* toDelete){};
     	template<typename T> inline void softDeleteArray(T* toDelete){};
 
-		Arena_ULL();
 
 		private:
             struct Sublifetime{

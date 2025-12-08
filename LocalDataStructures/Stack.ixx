@@ -2,6 +2,7 @@
 // Created by nickberryman on 14/11/25.
 //
 module;
+#include "Logger.h"
 
 export module LocalDataStructures:Stack;
 import LocalDataStructureConfigs;
@@ -19,8 +20,12 @@ namespace LocalDataStructures {
         T impl[size];
 
     public:
-        inline void push(T value);
-        inline T pop();
+        Stack() {} // Leaving this as a default constructor seems to cause the impl array to be 0-initialised (slow) [Tested on g++15 for Linux)
+            // Stack() = default -> BAD!!!! Causes an asm 'rep' loop to 0 initialise the array
+            // No constructor -> BAD!!!! Same as above
+            // Stack(){} -> GOOD! No array initialisation
+        inline void push(const T& value);
+        inline const T& pop();
         inline T peek(localSize_t back = 0);
         inline T& peekRef(localSize_t back = 0);
 
@@ -42,18 +47,19 @@ namespace LocalDataStructures {
  * @param value Item to add (copies)
  */
 template<typename T, localSize_t size>
-void LocalDataStructures::Stack<T, size>::push(T value) {
-    Logging::assert_except(stackPointer < size);
+void LocalDataStructures::Stack<T, size>::push(const T& value) {
+    LOGGER_ASSERT_EXCEPT(stackPointer < size);
     impl[stackPointer++] = value;
 }
+
 
 /**
  * Returns and removes item from stack (LIFO)
  * @return Item at end of stack
  */
 template<typename T, localSize_t size>
-T LocalDataStructures::Stack<T, size>::pop() {
-    Logging::assert_except(stackPointer > 0);
+const T& LocalDataStructures::Stack<T, size>::pop() {
+    LOGGER_ASSERT_EXCEPT(stackPointer > 0);
     return impl[--stackPointer];
 }
 
@@ -74,7 +80,7 @@ T LocalDataStructures::Stack<T, size>::peek(const localSize_t back) {
  */
 template<typename T, localSize_t size>
 T &LocalDataStructures::Stack<T, size>::peekRef(const localSize_t back) {
-    Logging::assert_except(stackPointer >= 1+back);
+    LOGGER_ASSERT_EXCEPT(stackPointer >= 1+back);
     return impl[stackPointer-1-back];
 }
 

@@ -2,6 +2,7 @@
 // Created by nickberryman on 14/11/25.
 //
 module;
+#include "Logger.h"
 
 export module LocalDataStructures:Dequeue;
 import LocalDataStructureConfigs;
@@ -23,13 +24,14 @@ namespace LocalDataStructures {
         inline static localSize_t wrapSubtract(localSize_t a, localSize_t b);
 
     public:
-        inline void push_front(T value);
-        inline T pop_front();
+        Dequeue() {}
+        inline void push_front(const T& value);
+        inline const T& pop_front();
         inline T peek_front(localSize_t skip = 0);
         inline T& peekRef_front(localSize_t skip = 0);
 
-        inline void push_back(T value);
-        inline T pop_back();
+        inline void push_back(const T& value);
+        inline const T& pop_back();
         inline T peek_back(localSize_t skip = 0);
         inline T& peekRef_back(localSize_t skip = 0);
 
@@ -46,10 +48,9 @@ namespace LocalDataStructures {
 // -- IMPLEMENTATION -- //
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Dequeue<T, size>::wrapSubtract(const localSize_t a, const localSize_t b) {
-    Logging::assert_except(a >= b || (b-a) <= size);
+    LOGGER_ASSERT_EXCEPT(a >= b || (b-a) <= size);
     if (a >= b) return a-b;
-    const localSize_t diff = b - a;
-    return size-diff;
+    return size-(b - a);
 }
 
 
@@ -58,11 +59,11 @@ localSize_t LocalDataStructures::Dequeue<T, size>::wrapSubtract(const localSize_
  * @param value Item to add (copies)
  */
 template<typename T, localSize_t size>
-void LocalDataStructures::Dequeue<T, size>::push_back(const T value) {
-    Logging::assert_except(len < size);
+void LocalDataStructures::Dequeue<T, size>::push_back(const T& value) {
+    LOGGER_ASSERT_EXCEPT(len < size);
     if (len == 0) head = (wrapSubtract(head,1));
     impl[tail++] = value;
-    tail %= size;
+    if (tail >= size) tail %= size;
     len++;
 }
 
@@ -71,8 +72,8 @@ void LocalDataStructures::Dequeue<T, size>::push_back(const T value) {
  * @param value Item to add (copies)
  */
 template<typename T, localSize_t size>
-void LocalDataStructures::Dequeue<T, size>::push_front(const T value) {
-    Logging::assert_except(len < size);
+void LocalDataStructures::Dequeue<T, size>::push_front(const T& value) {
+    LOGGER_ASSERT_EXCEPT(len < size);
     if (len == 0) tail = (tail+1)%size;
     impl[head] = value;
     head = wrapSubtract(head,1);
@@ -85,10 +86,11 @@ void LocalDataStructures::Dequeue<T, size>::push_front(const T value) {
  * @return Item at end of queue
  */
 template<typename T, localSize_t size>
-T LocalDataStructures::Dequeue<T, size>::pop_front() {
-    Logging::assert_except(len > 0);
+const T& LocalDataStructures::Dequeue<T, size>::pop_front() {
+    LOGGER_ASSERT_EXCEPT(len > 0);
     len--;
-    head = (head+1)%size;
+    head++;
+    if (head >= size) head = head%size;
     return impl[head];
 }
 
@@ -97,8 +99,8 @@ T LocalDataStructures::Dequeue<T, size>::pop_front() {
  * @return Item at end of queue
  */
 template<typename T, localSize_t size>
-T LocalDataStructures::Dequeue<T, size>::pop_back() {
-    Logging::assert_except(len > 0);
+const T& LocalDataStructures::Dequeue<T, size>::pop_back() {
+    LOGGER_ASSERT_EXCEPT(len > 0);
     len--;
     tail = wrapSubtract(tail,1);
     return impl[tail];
@@ -132,7 +134,7 @@ T LocalDataStructures::Dequeue<T, size>::peek_back(const localSize_t skip) {
 template<typename T, localSize_t size>
 T & LocalDataStructures::Dequeue<T, size>::peekRef_front(const localSize_t skip) {
     localSize_t i = (head + 1 + skip)%size;
-    Logging::assert_except(i >= (head+1)%size || i <= wrapSubtract(tail,1));
+    LOGGER_ASSERT_EXCEPT(i >= (head+1)%size || i <= wrapSubtract(tail,1));
     return impl[i];
 }
 
@@ -144,7 +146,7 @@ T & LocalDataStructures::Dequeue<T, size>::peekRef_front(const localSize_t skip)
 template<typename T, localSize_t size>
 T & LocalDataStructures::Dequeue<T, size>::peekRef_back(const localSize_t skip) {
     localSize_t i = (wrapSubtract(tail,1+skip));
-    Logging::assert_except(i >= (head+1)%size || i <= wrapSubtract(tail,1));
+    LOGGER_ASSERT_EXCEPT(i >= (head+1)%size || i <= wrapSubtract(tail,1));
     return impl[i];
 }
 

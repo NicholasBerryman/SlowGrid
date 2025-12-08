@@ -18,4 +18,4 @@ target_sources(SG_Allocator
         Arena_ULL.ixx
         CachedQueue.ixx
 )
-target_link_libraries(SG_Allocator PRIVATE LocalDataStructures)
+target_link_libraries(SG_Allocator PRIVATE LocalDataStructures Logger)

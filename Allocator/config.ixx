@@ -3,7 +3,7 @@
 //
 module;
 #include <cstdint>
-#define ARENA_SIZE_T uint32_t
+#define ARENA_SIZE_T std::uint32_t
 export module SG_AllocatorConfigs;
 
 export namespace SG_Allocator {

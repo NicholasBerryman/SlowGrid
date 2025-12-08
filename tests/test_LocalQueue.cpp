@@ -2,7 +2,10 @@
 // Created by nickberryman on 14/11/25.
 //
 #include "Logger.h"
+#include <iostream>
 #define assert Logging::assert_except
+
+using namespace std;
 
 import Logger;
 import LocalDataStructures;

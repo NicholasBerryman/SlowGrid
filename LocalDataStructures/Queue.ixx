@@ -2,6 +2,7 @@
 // Created by nickberryman on 14/11/25.
 //
 module;
+#include "Logger.h"
 
 export module LocalDataStructures:Queue;
 import LocalDataStructureConfigs;
@@ -15,15 +16,16 @@ namespace LocalDataStructures {
     export template<typename T, localSize_t size> class Queue {
         static_assert(size > 0, "Size must be larger than 0");
     private:
+        constexpr static localSize_t implSize = size+1;
         localSize_t tail = 0;
         localSize_t head = 0;
-        localSize_t len = 0;
-        T impl[size];
+        T impl[implSize];
 
         inline static localSize_t wrapSubtract(localSize_t a);
     public:
-        inline void push(T value);
-        inline T pop();
+        Queue() {}
+        inline void push(const T& value);
+        inline const T& pop();
         inline T peek(localSize_t skip = 0);
         inline T& peekRef(localSize_t skip = 0);
 
@@ -33,7 +35,7 @@ namespace LocalDataStructures {
 
         [[nodiscard]] static inline localSize_t maxLength();
         [[nodiscard]] inline localSize_t length() const;
-        
+
     };
 }
 
@@ -42,9 +44,9 @@ namespace LocalDataStructures {
 // -- IMPLEMENTATION -- //
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Queue<T, size>::wrapSubtract(const localSize_t a) {
-    Logging::assert_except(a >= 1 || (1-a) <= size);
+    LOGGER_ASSERT_EXCEPT(a >= 1 || (1-a) <= size);
     if (a >= 1) return a-1;
-    return size-1;
+    return implSize-1;
 }
 
 
@@ -53,11 +55,10 @@ localSize_t LocalDataStructures::Queue<T, size>::wrapSubtract(const localSize_t 
  * @param value Item to add (copies)
  */
 template<typename T, localSize_t size>
-void LocalDataStructures::Queue<T, size>::push(const T value) {
-    Logging::assert_except(len < size);
+void LocalDataStructures::Queue<T, size>::push(const T& value) {
+    LOGGER_ASSERT_EXCEPT(length() < size);
     impl[tail++] = value;
-    tail %= size;
-    len++;
+    if (tail >= implSize) tail %= implSize;
 }
 
 
@@ -66,12 +67,12 @@ void LocalDataStructures::Queue<T, size>::push(const T value) {
  * @return Item at end of queue
  */
 template<typename T, localSize_t size>
-T LocalDataStructures::Queue<T, size>::pop() {
-    Logging::assert_except(len > 0);
-    len--;
-    T out = impl[head++];
-    head %= size;
-    return out;
+const T& LocalDataStructures::Queue<T, size>::pop() {
+    LOGGER_ASSERT_EXCEPT(length() > 0);
+    auto out = head;
+    head++;
+    if (head >= implSize) head %= implSize;
+    return impl[out];
 }
 
 /**
@@ -91,8 +92,8 @@ T LocalDataStructures::Queue<T, size>::peek(const localSize_t skip) {
  */
 template<typename T, localSize_t size>
 T & LocalDataStructures::Queue<T, size>::peekRef(const localSize_t skip) {
-    localSize_t i = (head + skip)%size;
-    Logging::assert_except(i >= head || i < tail);
+    localSize_t i = (head + skip)%implSize;
+    LOGGER_ASSERT_EXCEPT(i >= head || i < tail);
     return impl[i];
 }
 
@@ -102,8 +103,7 @@ T & LocalDataStructures::Queue<T, size>::peekRef(const localSize_t skip) {
  */
 template<typename T, localSize_t size>
 T LocalDataStructures::Queue<T, size>::pop_back() {
-    Logging::assert_except(len > 0);
-    len--;
+    LOGGER_ASSERT_EXCEPT(length() > 0);
     tail = wrapSubtract(tail);
     return impl[tail];
 }
@@ -115,7 +115,6 @@ template<typename T, localSize_t size>
 void LocalDataStructures::Queue<T, size>::clear() {
     head = 0;
     tail = 0;
-    len  = 0;
 }
 
 /**
@@ -133,5 +132,6 @@ localSize_t LocalDataStructures::Queue<T, size>::maxLength() {
  */
 template<typename T, localSize_t size>
 localSize_t LocalDataStructures::Queue<T, size>::length() const {
-    return len;
+    if (tail >= head) return tail - head;
+    else return implSize-head+tail;
 }
