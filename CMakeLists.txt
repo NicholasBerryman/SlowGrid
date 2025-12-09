@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 add_subdirectory(Logger)
 add_subdirectory(LocalDataStructures)
 add_subdirectory(Allocator)
+add_subdirectory(Grid)
 
 ### Main Library Definition ###
 add_library(SlowGrid)
@@ -15,6 +16,7 @@ target_link_libraries(SlowGrid
             Logger
             LocalDataStructures
             SG_Allocator
+            SG_Grid
 )
 target_sources(SlowGrid
         PUBLIC

@@ -1,7 +1,7 @@
 Grid square representations:
 	Bitfield:
 		No weights
-		n/8 bytes storage -> 1MB ~= 3000x3000
+		n/8 bytes storage -> 1MB ~= 2800x2800
 		Potentially slow access?
 	Byte:
 		1-255 weights
@@ -9,9 +9,9 @@ Grid square representations:
 		Potentially fast access?
 	Word:
 		A lot of weights
-		4n bytes storage  -> 1MB ~= 250x250
-		Potentially fastest access? Or maye slower than byte??
-		
+		4n bytes storage  -> 1MB ~= 500x500
+		Potentially fastest access? Or maybe slower than byte??
+	
 Grid representations:
 	Flattened 2d array:
 		Don't even bother with non-flattened array. It's just worse 99.9% of the time

@@ -9,7 +9,6 @@ Basic Data Structures:
 	Local Stack   +
 	Local Queue   +
 	Local Dequeue +
-
 	Depends:
 		cstdint
 
@@ -20,7 +19,6 @@ Allocators:
 		Heap ULL -> used for Arena +
 		Sublifetime ULL +
 		Sublifetime Bucket Queue
-
 	Depends:
 		Data Structures
 

@@ -1,24 +1,5 @@
 
 SlowGrid plan:
-	- Make 'SlowGrid Benchmarks' Project
-		- Executable, not library
-		- For now just benchmark:
-			- 'new' vs Arena.alloc()
-			- LocalDataStructure::Queue vs std::Queue vs Allocator::CachedQueue
-			- LocalDataStructures::Stack vs std::Stack
-			- LocalDataStructure::Dequeue vs std::Dequeue
-			- Allocator::ULL vs std::Vector
-		- General test ideas:
-			- On small amounts of small data
-			- On small amounts of large data (e.g. structs of non-heap arrays)
-			- On large amounts of small data
-			- On large amounts of large data
-		- Compiler optimisation:
-			- Run in o3 mode
-			- Force inclusion of benchmarking code -> Don't let it get optimised out of compilation
-			- Consider Google Benchmarking library:
-				- Should also be able to take into account things like 'branch prediction learning a pattern'
-	
 	- Add Pathfinding
 		- Maps -> Alogrithms -> add to benchmarks
 	

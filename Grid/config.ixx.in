@@ -1,0 +1,13 @@
+//
+// Created by nickberryman on 9/12/25.
+//
+module;
+#include <cstdint>
+#define COORDINATE_T ${COORDINATE_T}
+#define FLOAT_DISTANCE_T ${FLOAT_DISTANCE_T}
+export module SG_GridConfigs;
+
+export namespace SG_Grid {
+    typedef COORDINATE_T coordinate_t;
+    typedef FLOAT_DISTANCE_T float_distance_t;
+}

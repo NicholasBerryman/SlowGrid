@@ -4,6 +4,7 @@
 
 module;
 #include <type_traits>
+#include"Logger.h"
 
 export module SG_Allocator:CachedQueue;
 import SG_AllocatorConfigs;
@@ -62,7 +63,7 @@ _arena(arena){
 template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
 is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::push(T val) {
-    Logging::assert_except(this->length() < this->maxLength());
+    LOGGER_ASSERT_EXCEPT(this->length() < this->maxLength());
     if (cache.length() < cacheSize) cache.push(val);
     else backlog->push(val);
 }
@@ -74,7 +75,7 @@ void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pu
 template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
 is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pop() {
-    Logging::assert_except(cache.length() > 0 || backlog->length() > 0);
+    LOGGER_ASSERT_EXCEPT(cache.length() > 0 || backlog->length() > 0);
     if (cache.length() > 0) return cache.pop();
     return backlog->pop();
 }
@@ -86,7 +87,7 @@ T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pop()
 template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
 is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::popUnsafe() {
-    Logging::assert_except(cache.length() > 0);
+    LOGGER_ASSERT_EXCEPT(cache.length() > 0);
     return cache.pop();
 }
 
@@ -98,7 +99,7 @@ T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::popUn
 template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
 is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::peek(localSize_t offset) {
-    Logging::assert_except(cache.length() + backlog->length() > offset);
+    LOGGER_ASSERT_EXCEPT(cache.length() + backlog->length() > offset);
     if (cache.length() > offset) return cache.peekRef(offset);
     return backlog->peekRef(offset-cache.length());
 }
@@ -111,7 +112,7 @@ T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pee
 template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
 is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 const T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::peekUnsafe(localSize_t offset) {
-    Logging::assert_except(cache.length() > offset);
+    LOGGER_ASSERT_EXCEPT(cache.length() > offset);
     return cache.peekRef(offset);
 }
 

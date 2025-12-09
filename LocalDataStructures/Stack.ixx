@@ -37,11 +37,6 @@ namespace LocalDataStructures {
     };
 }
 
-
-
-
-// -- IMPLEMENTATION -- //
-
 /**
  * Add item to end of stack
  * @param value Item to add (copies)

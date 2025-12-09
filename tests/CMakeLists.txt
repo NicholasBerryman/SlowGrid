@@ -14,3 +14,9 @@ newTest(LocalDequeue)
 newTest(UnrolledLinkedList)
 newTest(Arena)
 newTest(CachedQueue)
+newTest(GridPoint)
+newTest(FullGrid)
+newTest(BitfieldGrid)
+newTest(SparseGrid)
+
+
