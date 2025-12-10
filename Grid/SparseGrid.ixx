@@ -3,6 +3,7 @@
 //
 module;
 #include "Logger.h"
+#include <type_traits>
 export module SG_Grid:SparseGrid;
 import :Point;
 import :BaseGrid;
@@ -44,7 +45,7 @@ export namespace SG_Grid {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             impl[at.x()][at.y()] = chunk;
         }
-        inline void getChunk(const Point& at, Chunk_T* chunk) {
+        inline Chunk_T* getChunk(const Point& at) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             return impl[at.x()][at.y()];
         }

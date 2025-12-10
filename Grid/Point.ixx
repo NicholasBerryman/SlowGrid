@@ -18,32 +18,32 @@ export namespace SG_Grid {
      */
     class Point {
     public:
-        Point(coordinate_t x, coordinate_t y) : _x(x), _y(y) {}
-        [[nodiscard]] const coordinate_t& x() const {return _x;}
-        [[nodiscard]] const coordinate_t& y() const {return _y;}
-        void setX(coordinate_t& x){_x = x;}
-        void setY(coordinate_t& y){_y = y;}
+        inline Point(const coordinate_t& x, const coordinate_t& y) : _x(x), _y(y) {}
+        [[nodiscard]] inline const coordinate_t& x() const {return _x;}
+        [[nodiscard]] inline const coordinate_t& y() const {return _y;}
+        inline void setX(coordinate_t& x){_x = x;}
+        inline void setY(coordinate_t& y){_y = y;}
 
-        Point operator+(const Point& other) const { return Point(_x + other._x, _y + other._y); }
-        Point operator-(const Point& other) const { return Point(_x - other._x, _y - other._y); }
-        Point operator*(const Point& other) const { return Point(_x * other._x, _y * other._y); }
-        Point operator/(const Point& other) const { return Point(_x / other._x, _y / other._y); }
-        Point operator%(const Point& other) const { return Point(_x % other._x, _y % other._y); }
+        inline Point operator+(const Point& other) const { return Point(_x + other._x, _y + other._y); }
+        inline Point operator-(const Point& other) const { return Point(_x - other._x, _y - other._y); }
+        inline Point operator*(const Point& other) const { return Point(_x * other._x, _y * other._y); }
+        inline Point operator/(const Point& other) const { return Point(_x / other._x, _y / other._y); }
+        inline Point operator%(const Point& other) const { return Point(_x % other._x, _y % other._y); }
 
-        Point& operator+=(const Point& other) {_x += other._x; _y += other._y; return *this; }
-        Point& operator-=(const Point& other) {_x -= other._x; _y -= other._y; return *this; }
-        Point& operator*=(const Point& other) {_x *= other._x; _y *= other._y; return *this; }
-        Point& operator/=(const Point& other) {_x /= other._x; _y /= other._y; return *this; }
-        Point& operator%=(const Point& other) {_x %= other._x; _y %= other._y; return *this; }
+        inline Point& operator+=(const Point& other) {_x += other._x; _y += other._y; return *this; }
+        inline Point& operator-=(const Point& other) {_x -= other._x; _y -= other._y; return *this; }
+        inline Point& operator*=(const Point& other) {_x *= other._x; _y *= other._y; return *this; }
+        inline Point& operator/=(const Point& other) {_x /= other._x; _y /= other._y; return *this; }
+        inline Point& operator%=(const Point& other) {_x %= other._x; _y %= other._y; return *this; }
 
-        bool operator==(const Point& rhs) const {return _x == rhs._x && _y == rhs._y;}
-        bool operator!=(const Point& rhs) const {return _x != rhs._x || _y != rhs._y;}
-        Point operator>=(const Point& rhs) const {return Point(_x >= rhs._x, _y >= rhs._y);}
-        Point operator<=(const Point& rhs) const {return Point(_x <= rhs._x, _y <= rhs._y);}
-        Point operator>(const Point& rhs) const {return Point(_x > rhs._x, _y > rhs._y);}
-        Point operator<(const Point& rhs) const {return Point(_x < rhs._x, _y < rhs._y);}
+        inline bool operator==(const Point& rhs) const {return _x == rhs._x && _y == rhs._y;}
+        inline bool operator!=(const Point& rhs) const {return _x != rhs._x || _y != rhs._y;}
+        inline Point operator>=(const Point& rhs) const {return Point(_x >= rhs._x, _y >= rhs._y);}
+        inline Point operator<=(const Point& rhs) const {return Point(_x <= rhs._x, _y <= rhs._y);}
+        inline Point operator>(const Point& rhs) const {return Point(_x > rhs._x, _y > rhs._y);}
+        inline Point operator<(const Point& rhs) const {return Point(_x < rhs._x, _y < rhs._y);}
 
-        Point& abs() {_x = std::abs(_x); _y = std::abs(_y); return *this;}
+        inline Point& abs() {_x = std::abs(_x); _y = std::abs(_y); return *this;}
 
     private:
         coordinate_t _x;
