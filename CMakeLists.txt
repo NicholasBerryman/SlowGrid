@@ -8,6 +8,7 @@ add_subdirectory(Logger)
 add_subdirectory(LocalDataStructures)
 add_subdirectory(Allocator)
 add_subdirectory(Grid)
+add_subdirectory(Pathfind)
 
 ### Main Library Definition ###
 add_library(SlowGrid)
@@ -17,6 +18,7 @@ target_link_libraries(SlowGrid
             LocalDataStructures
             SG_Allocator
             SG_Grid
+            SG_Pathfind
 )
 target_sources(SlowGrid
         PUBLIC

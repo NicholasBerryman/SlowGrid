@@ -18,6 +18,7 @@ export namespace SG_Grid {
         inline void set(Point& at, const T& value){Logging::assert_except(0);}
         inline coordinate_t width(){Logging::assert_except(0); return 0;}
         inline coordinate_t height(){Logging::assert_except(0); return 0;}
+        inline void fill(const T& value){Logging::assert_except(0);}
         typedef T value_type;
 
     protected:

@@ -28,7 +28,13 @@ export namespace SG_Grid {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             impl[at.x()][at.y()] = value;
         }
-
+        inline void fill(const T& value){
+            for (int x = 0; x < width_; x++)
+                for (int y = 0; y < height_; y++)
+                    impl[x][y] = value;
+        }
+        
+        
         static constexpr coordinate_t width(){ return width_;}
         static constexpr coordinate_t height(){ return height_;}
         typedef T value_type;

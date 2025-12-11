@@ -24,6 +24,13 @@ void testOnStack(){
     LOGGER_ASSERT_EXCEPT(grid.width() == 3);
 
     LOGGER_ASSERT_ERROR( grid.get(SG_Grid::Point(0,3)); )
+	
+	grid.fill(0);
+    LOGGER_ASSERT_EXCEPT(grid.get(SG_Grid::Point(1,1)) == 0);
+    LOGGER_ASSERT_EXCEPT(grid.get(SG_Grid::Point(0,1)) == 0);
+    LOGGER_ASSERT_EXCEPT(grid.get(SG_Grid::Point(2,0)) == 0);
+    LOGGER_ASSERT_EXCEPT(grid.get(SG_Grid::Point(2,2)) == 0);
+    LOGGER_ASSERT_EXCEPT(grid.get(SG_Grid::Point(0,0)) == 0);
 }
 
 int main(int, char**) {

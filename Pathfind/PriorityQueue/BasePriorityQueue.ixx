@@ -1,0 +1,32 @@
+//
+// Created by nickberryman on 10/12/25.
+//
+export module SG_Pathfind:BasePriorityQueue;
+import Logger;
+
+export namespace SG_Pathfind {
+    namespace PriorityQueue {
+        /**
+         * @brief Interface for priority queues. Should only be inherited from, never used directly
+         *
+         */
+        template<typename T, typename priority_t>
+        class BasePriorityQueue {
+        public:
+            inline void insert(const T& value, priority_t priority ) {Logging::assert_except(0); }
+            inline bool contains(const T& value ) {Logging::assert_except(0); return 0;}
+
+            inline const T& findMin() {Logging::assert_except(0); return nullptr;}
+            inline T extractMin() {Logging::assert_except(0); return nullptr;}
+            inline void decreaseKey(const T& value, priority_t newPriority ) {Logging::assert_except(0); }
+
+            inline const T& findMax() {Logging::assert_except(0); return nullptr;}
+            inline T extractMax() {Logging::assert_except(0); return nullptr;}
+            inline void increaseKey(const T& value, priority_t newPriority ) {Logging::assert_except(0); }
+
+
+        protected:
+            BasePriorityQueue() = default;
+        };
+    }
+}

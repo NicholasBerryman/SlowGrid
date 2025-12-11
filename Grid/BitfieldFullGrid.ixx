@@ -29,6 +29,11 @@ export namespace SG_Grid {
             if (value) impl[at.x()/8][at.y()] |= (1 << (at.x()%8));
             else impl[at.x()/8][at.y()] &= ~(1 << (at.x()%8));
         }
+        inline void fill(const bool& value){
+            for (int x = 0; x < (width_/8+(width_%8 > 0)); x++)
+                for (int y = 0; y < height_; y++)
+                    impl[x][y] = value;
+        }
 
         static constexpr coordinate_t width(){ return width_;}
         static constexpr coordinate_t height(){ return height_;}

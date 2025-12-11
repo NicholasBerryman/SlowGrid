@@ -8,5 +8,6 @@ export import :BaseArena;
 export import :Arena;
 export import :CachedQueue;
 export import :UnrolledLinkedList;
+export import :UnrolledLinkedList2;
 export import :PseudoArena;
 export import SG_AllocatorConfigs;

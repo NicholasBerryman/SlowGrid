@@ -14,6 +14,7 @@ target_sources(SG_Allocator
         SG_Allocator.ixx
         BaseArena.ixx
         UnrolledLinkedList.ixx
+        UnrolledLinkedList2.ixx
         PseudoArena.ixx
         Arena_ULL.ixx
         CachedQueue.ixx

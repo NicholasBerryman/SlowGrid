@@ -49,7 +49,6 @@ export namespace SG_Grid {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             return impl[at.x()][at.y()];
         }
-
     private:
         Chunk_T* impl[chunksWide()][chunksHigh()];
     };

@@ -27,3 +27,6 @@ SlowGrid plan:
 			- Separate parameters for: NX, (3DS), (DS), GBA
 
 
+    - Future engine inclusions:
+        - String system??
+

@@ -19,7 +19,7 @@ Grid representations:
 		O(1) lookup  -> Just an array index
 		Cache friendly
 		Needs contiguous memory (unless virtual alloc??)
-	Heirarchical subgrid tree:
+	Hierarchical subgrid tree:
 		Parent nodes (supergrid):
 			Has height&width
 			Has list of subGrids paired with local origins

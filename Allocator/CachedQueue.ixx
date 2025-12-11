@@ -26,7 +26,7 @@ export namespace SG_Allocator {
         static_assert(cacheSize > 0, "CachedQueue must have cacheSize > 0");
     public:
         explicit CachedQueue(InsideArenaType& arena);
-        inline void push(T val);
+        inline void push(const T& val);
         inline T pop();
         inline T popUnsafe();
         [[nodiscard]] inline T& peek(localSize_t offset = 0);
@@ -39,7 +39,7 @@ export namespace SG_Allocator {
         [[nodiscard]] inline SG_Allocator::arenaSize_t cacheMaxLength() const;
 
     private:
-        InsideArenaType _arena;
+        InsideArenaType& _arena;
         LocalDataStructures::Queue<T, cacheSize> cache;
         LocalDataStructures::Queue<T, backlogCapacity>* backlog;
     };
@@ -62,7 +62,7 @@ _arena(arena){
  */
 template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
 is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::push(T val) {
+void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::push(const T& val) {
     LOGGER_ASSERT_EXCEPT(this->length() < this->maxLength());
     if (cache.length() < cacheSize) cache.push(val);
     else backlog->push(val);
