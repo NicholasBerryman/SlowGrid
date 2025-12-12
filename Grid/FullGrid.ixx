@@ -27,7 +27,7 @@ export namespace SG_Grid {
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         explicit FullGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) requires (width_ == 0) :
             width_var(width), height_var(height),
-            impl(arena.template allocArray<char>(internalWidth(width) * height))
+            impl(arena.template allocArray<internalT>(internalWidth(width) * height))
         {
             LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);
         }
@@ -39,12 +39,12 @@ export namespace SG_Grid {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return smartFind(at.x(),at.y());
         }
-        inline void set(const Point& at, const T value) requires (isBitfield) {
+        inline void set(const Point& at, const T& value) requires (isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             if (value) smartFind(at.x(),at.y()) |= (1 << (at.x()%8));
             else smartFind(at.x(),at.y()) &= ~(1 << (at.x()%8));
         }
-        inline void set(const Point& at, const T value) requires (!isBitfield) {
+        inline void set(const Point& at, const T& value) requires (!isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             smartFind(at.x(),at.y()) = value;
         }
@@ -82,6 +82,6 @@ export namespace SG_Grid {
         inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (!isBitfield) { return find(x,y); }
         inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (isBitfield) { return find(x/8,y); }
 
-        [[nodiscard]] inline coordinate_t internalWidth(const coordinate_t& x) const { if (isBitfield) return width()/8+(width()%8 > 0); return width();}
+        [[nodiscard]] static inline coordinate_t internalWidth(const coordinate_t& x) { if (isBitfield) return x/8+(x%8 > 0); return x;}
     };
 }

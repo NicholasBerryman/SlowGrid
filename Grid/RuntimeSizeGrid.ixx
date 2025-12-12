@@ -1,0 +1,39 @@
+//
+// Created by nickberryman on 9/12/25.
+//
+module;
+#include "Logger.h"
+export module SG_Grid:RuntimeSizeGrid;
+import :Point;
+import :BaseGrid;
+import :FullGrid;
+import SG_GridConfigs;
+import SG_Allocator;
+import Logger;
+
+export namespace SG_Grid {
+    /**
+     * @brief Grid to store arbitrarily typed data, without knowing the size of the grid at compile-time
+     * @tparam T Type to store in squares
+     * @tparam useBitfield True if a compressed representation for bools should be used (slower, but 8x smaller in memory - requires bool T)
+     */
+    template <typename T, bool useBitfield = false>
+    class RuntimeSizeGrid : private BaseGrid<T> {
+    public:
+        template<typename InsideArenaType>
+        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        RuntimeSizeGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){}
+
+        inline const T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
+        inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
+
+        inline void set(const Point& at, const T& value) {impl.set(at, value);}
+        inline const coordinate_t& width(){return impl.width();}
+        inline const coordinate_t& height(){return impl.height();}
+        inline void fill(const T& value){impl.fill(value);}
+        typedef T value_type;
+
+    private:
+        FullGrid<T,0,0, useBitfield> impl;
+    };
+}
