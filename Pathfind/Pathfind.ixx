@@ -6,3 +6,5 @@ module;
 export module SG_Pathfind;
 export import :BasePriorityQueue;
 export import :BaseHashSet;
+export import :GridRangeHashSet;
+

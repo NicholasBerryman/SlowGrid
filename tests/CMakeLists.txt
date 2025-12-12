@@ -19,5 +19,6 @@ newTest(FullGrid)
 newTest(BitfieldGrid)
 newTest(SparseGrid)
 newTest(RuntimeSizeGrid)
+newTest(GridRangeHashset)
 
 

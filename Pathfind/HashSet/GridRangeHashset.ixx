@@ -4,8 +4,7 @@
 
 module;
 #include <type_traits>
-#include <algorithm>
-
+#include "Logger.h"
 export module SG_Pathfind:GridRangeHashSet;
 import :BaseHashSet;
 import SG_Grid;
@@ -14,27 +13,45 @@ import Logger;
 // TODO figure out/remember how to index uniquely index grid squares within radius -> use that as the has function
 
 
+const SG_Grid::coordinate_t& max(const SG_Grid::coordinate_t& a, const SG_Grid::coordinate_t& b) {
+    if (a >= b) return a;
+    return b;
+}
+
+const SG_Grid::coordinate_t& min(const SG_Grid::coordinate_t& a, const SG_Grid::coordinate_t& b) {
+    if (a <= b) return a;
+    return b;
+}
 
 export namespace SG_Pathfind {
     namespace HashSet {
-        template<bool isBitfield, typename pathfindGrid_t, typename insideArena_t>
+        template<bool isBitfield=false>
         class GridRangeHashset : private BaseHashset<SG_Grid::Point, SG_Grid::Point>{
-        public:        
-            inline GridRangeHashset(const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& distance, const pathfindGrid_t& within, insideArena_t& arena) :
-                origin(std::max(0, centrePoint.x() - distance), std::max(0, centrePoint.y() - distance)),
-                arena(arena),
-                hashGrid(arena, std::min(pathfindGrid_t::width(), centrePoint.x() + distance) - centrePoint.x(), std::min(pathfindGrid_t::height(), centrePoint.y() + distance) - centrePoint.y())
+        public:
+            template <typename pathfindGrid_t, typename insideArena_t>
+            requires std::is_base_of_v<SG_Grid::BaseGrid<typename pathfindGrid_t::value_type>, pathfindGrid_t>
+            inline GridRangeHashset(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& distance) :
+                origin(max(0, centrePoint.x() - distance), max(0, centrePoint.y() - distance)),
+                hashGrid(arena, min(within.width(), centrePoint.x() + distance) - max(0, centrePoint.x() - distance)+1,  min(within.height(), centrePoint.y() + distance) - max(0, centrePoint.y() - distance)+1)
+#ifndef NDEBUG
+                ,tr(SG_Grid::Point(min(within.width(), centrePoint.x() + distance),  min(within.height(), centrePoint.y() + distance)))
+#endif
             {
                 hashGrid.fill(0);
             };
-            inline void insert(const SG_Grid::Point& value ) {hashGrid.set(value-origin,1);}
-            inline const bool& contains(const SG_Grid::Point& value ) {return hashGrid.get(value-origin);}
-            inline bool remove(const SG_Grid::Point& value ) {const bool& out = contains(value-origin); hashGrid.set(value-origin, 0); return out;}
-            [[nodiscard]] inline SG_Grid::Point calcHash(const SG_Grid::Point& toHash) const {return toHash-origin;}
+            inline void insert(const SG_Grid::Point& value ) {hashGrid.set(calcHash(value),1);}
+            inline const bool& contains(const SG_Grid::Point& value ) {return hashGrid.get(calcHash(value));}
+            inline void remove(const SG_Grid::Point& value ) { hashGrid.set(calcHash(value), 0); }
+            [[nodiscard]] inline SG_Grid::Point calcHash(const SG_Grid::Point& toHash) const {
+                LOGGER_ASSERT_EXCEPT(toHash.x() >= origin.x() && toHash.y() >= origin.y() && toHash.x() <= tr.x() && toHash.y() <= tr.y());
+                return toHash-origin;
+            }
+            inline void clear() {hashGrid.fill(0);}
 
-        private:
+#ifndef NDEBUG
+            SG_Grid::Point tr;
+#endif
             SG_Grid::Point origin;
-            insideArena_t& arena;
             SG_Grid::RuntimeSizeGrid<bool, isBitfield> hashGrid;
         };
     }
