@@ -20,27 +20,27 @@ export namespace SG_Grid {
     template<typename Chunk_T, coordinate_t width_, coordinate_t height_>
 	requires std::is_base_of_v<BaseGrid<typename Chunk_T::value_type>, Chunk_T>
     class SparseGrid : private BaseGrid<typename Chunk_T::value_type>{
-        static_assert(width_ > 0 && height_ > 0, "Width and height must be positive");
+        static_assert(width_ > 0 && height_ > 0 && Chunk_T::compileTimeWidth() > 0, "Width and height must be positive and known at compile time (including for inner chunks)");
     public:
         SparseGrid(){}
         inline const Chunk_T::value_type& get(const Point& at){
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
-            Chunk_T& chunk = *impl[at.x()/Chunk_T::width()][at.y()/Chunk_T::height()];
-            Point inChunk = Point(at.x()%Chunk_T::width(), at.y()%Chunk_T::height());
+            Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()];
+            Point inChunk = Point(at.x()%Chunk_T::compileTimeWidth(), at.y()%Chunk_T::compileTimeHeight());
             return chunk.get(inChunk);
         }
         inline void set(const Point& at, const Chunk_T::value_type& value) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
-            Chunk_T& chunk = *impl[at.x()/Chunk_T::width()][at.y()/Chunk_T::height()];
-            Point inChunk = Point(at.x()%Chunk_T::width(), at.y()%Chunk_T::height());
+            Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()];
+            Point inChunk = Point(at.x()%Chunk_T::compileTimeWidth(), at.y()%Chunk_T::compileTimeHeight());
             chunk.set(inChunk, value);
         }
         static constexpr coordinate_t width(){ return width_;}
         static constexpr coordinate_t height(){ return height_;}
         typedef Chunk_T::value_type value_type;
 
-        static constexpr coordinate_t chunksWide(){ return width_/Chunk_T::width()+(width_%Chunk_T::width()>1);}
-        static constexpr coordinate_t chunksHigh(){ return height_/Chunk_T::height()+(height_%Chunk_T::height()>1);}
+        static constexpr coordinate_t chunksWide(){ return width_/Chunk_T::compileTimeWidth()+(width_%Chunk_T::compileTimeWidth()>1);}
+        static constexpr coordinate_t chunksHigh(){ return height_/Chunk_T::compileTimeHeight()+(height_%Chunk_T::compileTimeHeight()>1);}
         inline void setChunk(const Point& at, Chunk_T* chunk) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             impl[at.x()][at.y()] = chunk;

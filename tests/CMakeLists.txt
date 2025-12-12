@@ -18,5 +18,6 @@ newTest(GridPoint)
 newTest(FullGrid)
 newTest(BitfieldGrid)
 newTest(SparseGrid)
+newTest(RuntimeSizeGrid)
 
 

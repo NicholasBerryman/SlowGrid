@@ -13,8 +13,9 @@ target_sources(SG_Grid
 		config.ixx
 		Point.ixx
 		BaseGrid.ixx
-		BitfieldFullGrid.ixx
+        FullGrid.ixx
 		FullGrid.ixx
 		SparseGrid.ixx
+		RuntimeSizeGrid.ixx
 )
-target_link_libraries(SG_Grid PRIVATE LocalDataStructures Logger)
+target_link_libraries(SG_Grid PRIVATE LocalDataStructures Logger SG_Allocator)

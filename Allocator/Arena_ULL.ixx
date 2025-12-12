@@ -29,9 +29,9 @@ export namespace SG_Allocator {
 		Arena_ULL();
 
     	template<typename T> inline T* alloc();
-    	template<typename T> inline T* allocArray(const arenaSize_t arrayLength);
+    	template<typename T> inline T* allocArray(const arenaSize_t& arrayLength);
 		template<typename T, typename... ConstructorArgs> inline T* allocConstruct(ConstructorArgs... args);
-		template<typename T, typename... ConstructorArgs> inline T* allocConstructArray(const arenaSize_t arrayLength, ConstructorArgs... args);
+		template<typename T, typename... ConstructorArgs> inline T* allocConstructArray(const arenaSize_t& arrayLength, ConstructorArgs... args);
 
     	inline void sublifetime_open();
     	inline void sublifetime_rollback();
@@ -39,7 +39,7 @@ export namespace SG_Allocator {
 
     	inline void clear();
     	inline void softClear();
-    	inline void expand(const arenaSize_t newSize);
+    	inline void expand(const arenaSize_t& newSize);
 
     	[[nodiscard]] inline arenaSize_t maxSize() const;
     	[[nodiscard]] inline arenaSize_t usedSpace() const;
@@ -92,7 +92,7 @@ T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::alloc() {
  */
 template<SG_Allocator::arenaSize_t blockSize, localSize_t maxSublifetimes>
 template<typename T>
-T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocArray(const arenaSize_t arrayLength) {
+T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocArray(const arenaSize_t& arrayLength) {
 	return impl.allocArray<T>(arrayLength);
 }
 
@@ -119,7 +119,7 @@ T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstruct(Construc
  */
 template<SG_Allocator::arenaSize_t blockSize, localSize_t maxSublifetimes>
 template<typename T, typename ... ConstructorArgs>
-T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstructArray(const arenaSize_t arrayLength, ConstructorArgs... args) {
+T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstructArray(const arenaSize_t& arrayLength, ConstructorArgs... args) {
 	T* out = allocArray<T>(arrayLength);
 	for (auto i = 0; i < arrayLength; i++) new (&out[i]) T(args...);
 	return out;
@@ -148,7 +148,7 @@ void SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::softClear() {
  * @param newSize Size to allocate space up to
  */
 template<SG_Allocator::arenaSize_t blockSize, localSize_t maxSublifetimes>
-void SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::expand(const arenaSize_t newSize) {
+void SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::expand(const arenaSize_t& newSize) {
 	impl.expand(newSize);
 }
 
