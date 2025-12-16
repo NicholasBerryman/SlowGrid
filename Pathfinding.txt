@@ -1,41 +1,78 @@
-Grid square representations:
-	Bitfield:
-		No weights
-		n/8 bytes storage -> 1MB ~= 2800x2800
-		Potentially slow access?
-	Byte:
-		1-255 weights
-		n bytes storage   -> 1MB ~= 1000x1000
-		Potentially fast access?
-	Word:
-		A lot of weights
-		4n bytes storage  -> 1MB ~= 500x500
-		Potentially fastest access? Or maybe slower than byte??
+
+Implementation notes:
+	d -> max distance
 	
-Grid representations:
-	Flattened 2d array:
-		Don't even bother with non-flattened array. It's just worse 99.9% of the time
-		O(n) storage -> Stores whole grid world
-		O(1) lookup  -> Just an array index
-		Cache friendly
-		Needs contiguous memory (unless virtual alloc??)
-	Hierarchical subgrid tree:
-		Parent nodes (supergrid):
-			Has height&width
-			Has list of subGrids paired with local origins
-			Converts world coordinates to subGrid + local coordinates 
-			Only overlap/touch their own parent node (if not root) (i.e. islands/caves/etc)
-		Leaves:
-			Flattened 2d array
-		Lookup:
-			Check if/which leaf grid exists -> binary search
-			Convert to leaf grid coords if found
-			Return default value if outside subgrid (e.g. 'blocked')
-		O(x<=n) storage -> Only needs to actually store a subset of the whole world grid
-			O(n) worst cast
-		O(log(n)) lookup if leaf node not known
-		O(1) lookup if leaf node is known -> just an array index
-	
+	Breadth First:
+		Does not need priority queue!!!
+		Hashset implementation:
+			- Uses (optimal) hashset to track visited nodes and prevent revisit
+			- O(1) membership operation
+			- O(d^2) memory
+		Simple Queue implementation:
+			- Uses a simple queue to track visited nodes and prevent revisit
+			- O(kd) membership operation
+			- O(kd) memory
+		
+		Only works on uniform cost grids !!!
+		Should be templatable hashset vs queue
+		
+	Dijkstra's (or really UCS):
+		Uniform cost grid:
+			Equivalent to BFS -> Just use BFS
+		Integer cost grid:
+			Bucket/HOT queue or binary heap (w/ decrease-key)
+		Floating cost grid:
+			Binary heap (w/ decrease-key)
+		
+		Avoiding decrease-key:
+			Just add a duplicate node at the lower priority
+			Increases memory usage, but almost always faster
+			Should be a templatable option
+
+	A*:
+		Uniform cost grid:
+			Heuristic: Manhattan/chebyshev distance
+			Priority Queue:
+				Requires priority queue -> doesn't expand predictably in same way as BFS
+				Does not require decrease-key -> never finds a faster path than already found
+				Priorities:
+					Minimum priority is manhattan/chebyshev between start and end
+					Maximum priority is d
+					TODO consider how bucket size might work -> not necessarily same as bfs/dijkstra
+				Bucket queue with array containing LocalStacks or LocalHeaps
+				
+		Integer cost grid:
+			Heuristic: Manhattan/chebyshev distance
+			TODO consider how bucket size might work -> not necessarily same as bfs/dijkstra
+			If a bucket queue is used:
+				array/ULL containing singly-linked list
+				Only ever needs pop_front xor pop_back within all buckets of a given bucket queue
+					Determines bfs or dfs priority tiebreak behaviour
+					swapping pop_front and pop_back just require changing link direction (templatable)
+					-> Never needs a doubly-linked list
+			See dijkstra
+
+		Floating cost grid:
+			Heuristic: Euclidean distance
+			See dijkstra
+
+	Priority queues:
+		All should be templatable to use or not use a (optimal) hashset for membership
+		Bucket Queue:
+			Monotonic -> track most recent extract-min bucket
+			Uniform cost grid:
+				Should be templatable to use LocalStack vs LocalQueue
+			Integer cost grid:
+				Should be templatable to use pop_front vs pop_back (forward linked vs reverse linked)
+				Should be templatable to use a (optimal) hashMAP of node pointers for decrease-key
+		Binary heap:
+			Should be templatable to use ULL vs (non-dynamic) array representation
+
+
+
+
+
+Old notes:
 Breadth First Search:
 	Unweighted grids
 	d -> max distance
