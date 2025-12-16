@@ -10,9 +10,6 @@ import :BaseHashSet;
 import SG_Grid;
 import Logger;
 
-// TODO figure out/remember how to index uniquely index grid squares within radius -> use that as the has function
-
-
 const SG_Grid::coordinate_t& max(const SG_Grid::coordinate_t& a, const SG_Grid::coordinate_t& b) {
     if (a >= b) return a;
     return b;
@@ -23,6 +20,7 @@ const SG_Grid::coordinate_t& min(const SG_Grid::coordinate_t& a, const SG_Grid::
     return b;
 }
 
+// TODO change to a HashMap -> Can then use as a flow-field grid
 export namespace SG_Pathfind {
     namespace HashSet {
         template<bool isBitfield=false>

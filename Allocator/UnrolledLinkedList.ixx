@@ -11,8 +11,6 @@ import :BaseArena;
 import SG_AllocatorConfigs;
 import Logger;
 
-//TODO fix to use const references where possible
-
 export namespace SG_Allocator {
     template<typename InsideArenaType, typename alignment = char>
     requires std::is_base_of_v<BaseArena, InsideArenaType>
@@ -305,7 +303,7 @@ template<typename T>
 T* SG_Allocator::ULL<InsideArenaType, alignment>::getFromBack(const arenaSize_t& indexFromBack) {
     LOGGER_ASSERT_EXCEPT(indexFromBack < _length);
     auto startPoint = blockSize - (tail->remainingSpace);
-    if (indexFromBack < startPoint) reinterpret_cast<T*>(&(tail->arr[startPoint-1-(tail->remainingSpace)]));
+    if (indexFromBack < startPoint) return reinterpret_cast<T*>(&(tail->arr[startPoint-indexFromBack-1]));
     
     Node* n = tail->previous;
     arenaSize_t i = indexFromBack-startPoint;
@@ -314,5 +312,5 @@ T* SG_Allocator::ULL<InsideArenaType, alignment>::getFromBack(const arenaSize_t&
         n = n->previous;
         i -= blockSize;
     }
-    return reinterpret_cast<T*>(&(n->arr[blockSize - i]));
+    return reinterpret_cast<T*>(&(n->arr[blockSize - i - 1]));
 }

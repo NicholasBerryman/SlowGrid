@@ -13,6 +13,7 @@ target_sources(SG_Allocator
         ${CMAKE_CURRENT_BINARY_DIR}/config.ixx
         SG_Allocator.ixx
         BaseArena.ixx
+        LinkedList.ixx
         UnrolledLinkedList.ixx
         UnrolledLinkedList2.ixx
         PseudoArena.ixx
