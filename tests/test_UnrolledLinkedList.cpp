@@ -113,12 +113,78 @@ void testULL(){
     LOGGER_ASSERT_ERROR( ull.dealloc(4); )
 }
 
+template <typename a, typename T>
+void testULL2() {
+    a myHeap;
+    SG_Allocator::ULL2<a, T> ull(myHeap, 8);
+
+    assert(ull.length() == 0);
+    assert(ull.maxSize() == 8);
+
+    LOGGER_ASSERT_ERROR( ull.get(0); )
+
+    ull.push_back(11);
+    assert(ull.length() == 1);
+    assert(ull.maxSize() == 8);
+    assert(ull.get(0) == 11);
+    assert(ull.getFromBack(0) == 11);
+    assert(ull.back() == 11);
+
+    ull.push_back(3);
+    assert(ull.length() == 2);
+    assert(ull.maxSize() == 8);
+    assert(ull.get(0) == 11);
+    assert(ull.get(1) == 3);
+    assert(ull.getFromBack(0) == 3);
+    assert(ull.getFromBack(1) == 11);
+    assert(ull.back() == 3);
+
+    ull.push_back(4);
+    ull.push_back(4);
+    ull.push_back(4);
+    ull.push_back(4);
+    ull.push_back(4);
+    ull.push_back(4);
+    assert(ull.length() == 8);
+    assert(ull.maxSize() == 8);
+    assert(ull.back() == 4);
+
+    ull.push_back(69);
+    assert(ull.length() == 9);
+    assert(ull.maxSize() == 16);
+    assert(ull.back() == 69);
+    assert(ull.getFromBack(0) == 69);
+    assert(ull.get(8) == 69);
+    assert(ull.get(7) == 4);
+    assert(ull.getFromBack(1) == 4);
+    assert(ull.getFromBack(8) == 11);
+
+    ull.construct_back(71);
+    assert(ull.length() == 10);
+    assert(ull.maxSize() == 16);
+    assert(ull.back() == 71);
+    assert(ull.getFromBack(0) == 71);
+    assert(ull.get(9) == 71);
+    assert(ull.get(7) == 4);
+    assert(ull.getFromBack(1) == 69);
+    assert(ull.getFromBack(9) == 11);
+}
+
+
 int main(int, char**) {
     testULL<SG_Allocator::PseudoArena, char>();
     testULL<SG_Allocator::PseudoArena, uint64_t>();
 
     testULL<SG_Allocator::Arena_ULL<1000,3>, char>();
     testULL<SG_Allocator::Arena_ULL<32,3>, uint64_t>();
+
+
+    testULL2<SG_Allocator::PseudoArena, char>();
+    testULL2<SG_Allocator::PseudoArena, uint64_t>();
+
+    testULL2<SG_Allocator::Arena_ULL<1000,3>, char>();
+    testULL2<SG_Allocator::Arena_ULL<64,3>, uint64_t>();
+
     return 0;
 }
 

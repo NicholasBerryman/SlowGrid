@@ -34,12 +34,12 @@ Implementation notes:
 			Heuristic: Manhattan/chebyshev distance
 			Priority Queue:
 				Requires priority queue -> doesn't expand predictably in same way as BFS
-				Does not require decrease-key -> never finds a faster path than already found
+				Does not require decrease-key -> never finds a faster path than already found (if heuristic is admissible)
 				Priorities:
 					Minimum priority is manhattan/chebyshev between start and end
 					Maximum priority is d
 					TODO consider how bucket size might work -> not necessarily same as bfs/dijkstra
-				Bucket queue with array containing LocalStacks or LocalHeaps
+				Bucket queue with array containing LocalStacks or LocalHeaps (because no requirement for decrease-key)
 				
 		Integer cost grid:
 			Heuristic: Manhattan/chebyshev distance
@@ -63,10 +63,18 @@ Implementation notes:
 			Uniform cost grid:
 				Should be templatable to use LocalStack vs LocalQueue
 			Integer cost grid:
-				Should be templatable to use pop_front vs pop_back (forward linked vs reverse linked)
 				Should be templatable to use a (optimal) hashMAP of node pointers for decrease-key
 		Binary heap:
 			Should be templatable to use ULL vs (non-dynamic) array representation
+
+	Linked List notes:
+		Should be templatable to use pop_front vs pop_back (forward linked vs reverse linked) (or both for doubly-linked)
+		Should have optional 'recycleNodes' flag -> reduces memory fragmentation esp for Arena allocation
+		    'NodeManager' class:
+		        - Provides nodes to linked list
+		        - Constructs nodes if it has none in stock
+		        - Is given nodes when they are removed -> Lets us recycle nodes
+
 
 
 

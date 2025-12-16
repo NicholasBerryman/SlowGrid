@@ -8,10 +8,10 @@ module;
 
 export module SG_Allocator:UnrolledLinkedList;
 import :BaseArena;
+import :PseudoArena;
+import :LinkedList;
 import SG_AllocatorConfigs;
 import Logger;
-
-//TODO fix to use const references where possible
 
 export namespace SG_Allocator {
     template<typename InsideArenaType, typename alignment = char>
@@ -29,7 +29,7 @@ export namespace SG_Allocator {
     class ULL {
         friend class NodeExaminer<InsideArenaType, alignment>;
     public:
-        ULL(InsideArenaType& arena, const arenaSize_t& initialSize);
+        ULL(InsideArenaType& arena_, const arenaSize_t& initialSize);
         inline ~ULL();
         template<typename T> inline T* alloc();
         template<typename T> inline T* allocArray(const arenaSize_t& arrayLength);
@@ -43,23 +43,21 @@ export namespace SG_Allocator {
         template<typename T> inline T* get(const arenaSize_t& index);
         template<typename T> inline T* getFromBack(const arenaSize_t& indexFromBack);
 
-        [[nodiscard]] inline const arenaSize_t& maxSize() const;
+        [[nodiscard]] inline arenaSize_t maxSize() const;
         [[nodiscard]] inline const arenaSize_t& length() const;
 
     private:
-        struct Node{
-            Node* previous = nullptr;
-            Node* next = nullptr;
+        struct Block{
             arenaSize_t remainingSpace; //Maybe benchmark using this vs modulo operations??
             alignment* arr;
+            Block(const arenaSize_t& a, alignment* const& b): remainingSpace(a), arr(b){}
         };
 
         InsideArenaType& arena;
-        Node* root;
-        Node* tail;
+        LinkedList<InsideArenaType, Block> impl;
         arenaSize_t _length;
-        arenaSize_t size;
         const arenaSize_t blockSize;
+        void* tail = nullptr;
 
         inline void shrink();
     };
@@ -93,13 +91,13 @@ export namespace SG_Allocator {
          * @param newTail Pointer to new tail (should get from 'void* currentTail(...)')
          * @param newLength Length to set ULL to use after switching to the new tail (should get from ULL.length() at same time as tail)
          */
-        static void setTail(ULL<InsideArenaType, alignment>& ull, void* newTail, arenaSize_t newLength) {
-            ull.tail = static_cast<ULL<InsideArenaType, alignment>::Node*>(newTail);
+        static void setTail(ULL<InsideArenaType, alignment>& ull, void* const& newTail, const arenaSize_t& newLength) {
+            ull.tail = static_cast<void*>(newTail);
             ull._length = newLength;
             arenaSize_t effectiveCapacity = newLength/ull.blockSize * ull.blockSize;
             if (newLength > effectiveCapacity) effectiveCapacity += ull.blockSize;
-            if (effectiveCapacity <ull. blockSize) effectiveCapacity = ull.blockSize;
-            ull.tail->remainingSpace = effectiveCapacity - newLength;
+            if (effectiveCapacity < ull.blockSize) effectiveCapacity = ull.blockSize;
+            ull.impl.get_atNode(ull.tail).remainingSpace = effectiveCapacity - newLength;
         }
     };
 }
@@ -107,29 +105,30 @@ export namespace SG_Allocator {
 /**
  * @brief Default constructor for ULL
  *
- * @param arena Arena object to use for block allocations
+ * @param arena_ Arena object to use for block allocations
  * @param initialSize Size of blocks, including the initial block
  */
 template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-SG_Allocator::ULL<InsideArenaType, alignment>::ULL(InsideArenaType& arena, const arenaSize_t& initialSize):
-    arena(arena),
+SG_Allocator::ULL<InsideArenaType, alignment>::ULL(InsideArenaType& arena_, const arenaSize_t& initialSize):
+    arena(arena_),
+    impl(arena_),
     blockSize(initialSize)
 {
     LOGGER_ASSERT_EXCEPT(blockSize > 0);
     _length = 0;
-    size = initialSize;
-    root = arena.template allocConstruct<Node>();
-    tail = root;
-    root->remainingSpace = blockSize;
-    root->arr =  arena.template allocArray<alignment>(blockSize);;
+    tail = impl.construct_front(blockSize, arena.template allocArray<alignment>(blockSize));
 }
 
 template<typename InsideArenaType, typename alignment> requires std::is_base_of_v<SG_Allocator::BaseArena,
     InsideArenaType>
 SG_Allocator::ULL<InsideArenaType, alignment>::~ULL() {
-    arena.softDeleteArray(root->arr);
-    arena.softDelete(root);
+    if constexpr (std::is_base_of_v<PseudoArena, InsideArenaType>){
+        while (impl.length() > 0) {
+            arena.softDeleteArray(impl.get_fromFront(0).arr);
+            impl.remove_front();
+        }
+    }
 }
 
 
@@ -139,7 +138,7 @@ SG_Allocator::ULL<InsideArenaType, alignment>::~ULL() {
  */
 template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-const SG_Allocator::arenaSize_t& SG_Allocator::ULL<InsideArenaType, alignment>::maxSize() const { return size; }
+SG_Allocator::arenaSize_t SG_Allocator::ULL<InsideArenaType, alignment>::maxSize() const { return blockSize*impl.length(); }
 
 /**
  *
@@ -157,7 +156,7 @@ template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::ULL<InsideArenaType, alignment>::clear(){
     _length = 0;
-    root->remainingSpace = blockSize;
+    impl.get_fromFront(0).remainingSpace = blockSize;
     shrink();
 }
 
@@ -169,8 +168,8 @@ template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::ULL<InsideArenaType, alignment>::softClear(){
     _length = 0;
-    root->remainingSpace = blockSize;
-    tail = root;
+    impl.get_fromFront(0).remainingSpace = blockSize;
+    tail = impl.node_fromFront(0);
 }
 
 /**
@@ -181,18 +180,8 @@ void SG_Allocator::ULL<InsideArenaType, alignment>::softClear(){
 template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::ULL<InsideArenaType, alignment>::expand(const arenaSize_t& newSize) {
-    if (size >= newSize) return; //Only expand if we need to
-    Node* n = tail;
-    while (size < newSize){
-        if (n->next == nullptr) {
-            n->next = arena.template allocConstruct<Node>();
-            n->next->previous = n;
-            n->next->arr = arena.template allocArray<alignment>(blockSize);
-        }
-        n = n->next;
-        n->remainingSpace = blockSize;
-        size += blockSize;
-    }
+    if (maxSize() >= newSize) return; //Only expand if we need to
+    while (maxSize() < newSize)  impl.construct_back(blockSize, arena.template allocArray<alignment>(blockSize));
 }
 
 /**
@@ -202,34 +191,32 @@ void SG_Allocator::ULL<InsideArenaType, alignment>::expand(const arenaSize_t& ne
 template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
 void SG_Allocator::ULL<InsideArenaType, alignment>::shrink(){
-    if (size == blockSize) return; //Don't delete the root
-    if (_length + blockSize - 1 >= size) return; //Don't shrink if we're already shrunk
+    if (maxSize() == blockSize) return; //Don't delete the root
+    if (_length + blockSize - 1 >= maxSize()) return; //Don't shrink if we're already shrunk
 
-    while (tail->next) tail = tail->next;
-    while ((_length + blockSize - 1) < size && size > blockSize){
-        arena.softDeleteArray(tail->arr);
-        tail = tail->previous;
-        arena.softDelete(tail->next);
-        size -= blockSize;
+    while ((_length + blockSize - 1) < maxSize() && maxSize() > blockSize){
+        arena.softDeleteArray(impl.get_fromBack(0).arr);
+        impl.remove_back();
     }
-    tail->next = nullptr;
-    tail->remainingSpace = size - _length;
+    tail = impl.node_fromBack(0);
+    impl.get_atNode(tail).remainingSpace = maxSize() - _length;
 }
 
 
 #define Allocator_ULL \
     if (allocSize > blockSize) {LOGGER_ASSERT_EXCEPT(0); return nullptr;} /*Too big to fit inside one block -> can't allocate*/ \
-    if (tail->remainingSpace < allocSize){ /*Too big to fit inside current block -> make a new block*/ \
-        _length += tail->remainingSpace; \
+    auto& t0 = impl.get_atNode(tail); \
+    if (t0.remainingSpace < allocSize){ /*Too big to fit inside current block -> make a new block*/ \
+        _length += t0.remainingSpace; \
+        t0.remainingSpace = 0; \
         expand(_length+allocSize); \
-        if (tail->next) { \
-            tail = tail->next; \
-            tail->remainingSpace = blockSize; \
-        } \
+        tail = impl.node_after(tail); \
+        impl.get_atNode(tail).remainingSpace = blockSize;\
     } \
-    auto out = (T*) (&tail->arr[blockSize-(tail->remainingSpace)]); \
-    tail->remainingSpace -= allocSize; \
-    _length += allocSize; \
+    auto& t = impl.get_atNode(tail); \
+    auto out = (T*) (&impl.get_atNode(tail).arr[blockSize-(t.remainingSpace)]); \
+    _length +=  allocSize; \
+    t.remainingSpace -= allocSize; \
     return out;
 
 /**
@@ -275,7 +262,7 @@ void SG_Allocator::ULL<InsideArenaType, alignment>::dealloc(const arenaSize_t& d
 }
 
 /**
- * @brief Get pointer to element at given index. Be careful not to 'get' partway through an allocation larger than 'alignment'
+ * @brief Get pointer to element at given index. Be careful not to 'get' partway through an allocation larger than 'alignment'!
  *
  * @param index Index from start of array, in alignment-sized chunks
  */
@@ -284,18 +271,13 @@ template<typename InsideArenaType, typename alignment> requires std::is_base_of_
 template<typename T>
 T* SG_Allocator::ULL<InsideArenaType, alignment>::get(const arenaSize_t& index) {
     LOGGER_ASSERT_EXCEPT(index < _length);
-    arenaSize_t i = 0;
-    Node* n = root;
-    while ((index - i) >= blockSize) {
-        LOGGER_ASSERT_EXCEPT(n->next != nullptr);
-        n = n->next;
-        i += blockSize;
-    }
-    return reinterpret_cast<T*>(&(n->arr[index - i]));
+    arenaSize_t i = index / blockSize;
+    arenaSize_t ii = index % blockSize;
+    return reinterpret_cast<T*>(&(impl.get_fromFront(i).arr[ii]));
 }
 
 /**
- * @brief Get pointer to element at given index back from the last element. Be careful not to 'get' partway through an allocation larger than 'alignment'
+ * @brief Get pointer to element at given index back from the last element. Be careful not to 'get' partway through an allocation larger than 'alignment'!
  *
  * @param indexFromBack Index from end of array, in alignment-sized chunks
  */
@@ -304,15 +286,15 @@ template<typename InsideArenaType, typename alignment> requires std::is_base_of_
 template<typename T>
 T* SG_Allocator::ULL<InsideArenaType, alignment>::getFromBack(const arenaSize_t& indexFromBack) {
     LOGGER_ASSERT_EXCEPT(indexFromBack < _length);
-    auto startPoint = blockSize - (tail->remainingSpace);
-    if (indexFromBack < startPoint) reinterpret_cast<T*>(&(tail->arr[startPoint-1-(tail->remainingSpace)]));
-    
-    Node* n = tail->previous;
+    auto startPoint = blockSize - (impl.get_atNode(tail).remainingSpace);
+    if (indexFromBack < startPoint) return reinterpret_cast<T*>(&(impl.get_atNode(tail).arr[startPoint-indexFromBack-1]));
+
+    void* n = impl.node_before(tail);
     arenaSize_t i = indexFromBack-startPoint;
     while (i >= blockSize) {
-        LOGGER_ASSERT_EXCEPT(n->next != nullptr);
-        n = n->previous;
+        LOGGER_ASSERT_EXCEPT(impl.node_before(n) != nullptr);
+        n = impl.node_before(n);
         i -= blockSize;
     }
-    return reinterpret_cast<T*>(&(n->arr[blockSize - i]));
+    return reinterpret_cast<T*>(&(impl.get_atNode(n).arr[blockSize - i - 1]));
 }

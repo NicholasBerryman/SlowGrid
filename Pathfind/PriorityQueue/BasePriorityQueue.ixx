@@ -13,16 +13,16 @@ export namespace SG_Pathfind {
         template<typename T, typename priority_t>
         class BasePriorityQueue {
         public:
-            inline void insert(const T& value, priority_t priority ) {Logging::assert_except(0); }
+            inline void insert(const T& value, const priority_t& priority ) {Logging::assert_except(0); }
             inline bool contains(const T& value ) {Logging::assert_except(0); return 0;}
 
             inline const T& findMin() {Logging::assert_except(0); return nullptr;}
             inline T extractMin() {Logging::assert_except(0); return nullptr;}
-            inline void decreaseKey(const T& value, priority_t newPriority ) {Logging::assert_except(0); }
+            inline void decreaseKey(const T& value, const priority_t& newPriority ) {Logging::assert_except(0); }
 
             inline const T& findMax() {Logging::assert_except(0); return nullptr;}
             inline T extractMax() {Logging::assert_except(0); return nullptr;}
-            inline void increaseKey(const T& value, priority_t newPriority ) {Logging::assert_except(0); }
+            inline void increaseKey(const T& value, const priority_t& newPriority ) {Logging::assert_except(0); }
 
 
         protected:

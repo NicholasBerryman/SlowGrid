@@ -6,10 +6,6 @@ export module SG_Pathfind:BaseHashSet;
 import SG_Grid;
 import Logger;
 
-// TODO figure out/remember how to index uniquely index grid squares within radius -> use that as the has function
-
-
-
 export namespace SG_Pathfind {
     namespace HashSet {
         /**

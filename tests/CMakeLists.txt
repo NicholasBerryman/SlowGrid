@@ -20,5 +20,6 @@ newTest(BitfieldGrid)
 newTest(SparseGrid)
 newTest(RuntimeSizeGrid)
 newTest(GridRangeHashset)
+newTest(LinkedList)
 
 
