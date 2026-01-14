@@ -126,9 +126,10 @@ export namespace SG_Allocator {
     void LinkedList<InsideArenaType, T>::push_at(const T &value, void* parent) {
         Node* const& child = static_cast<Node *>(parent)->next;
         static_cast<Node *>(parent)->next = arena.template allocConstruct<Node>(static_cast<Node *>(parent), child);
-        static_cast<Node *>(parent)->next->previous = static_cast<Node *>(parent);
-        static_cast<Node *>(parent)->next->next = child;
+        //static_cast<Node *>(parent)->next->previous = static_cast<Node *>(parent);
+        //static_cast<Node *>(parent)->next->next = child;
         static_cast<Node *>(parent)->next->value = value;
+		if (child != nullptr) child->previous = static_cast<Node *>(parent)->next;
         _length++;
     }
 
