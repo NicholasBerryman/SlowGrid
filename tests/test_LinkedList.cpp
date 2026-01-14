@@ -38,8 +38,6 @@ void testLL(){
     assert(ll.getFromBack(2) == 0);
 
     ll.push_at(1, 8);
-    //TODO figure out double-free after this call + implicit constructor
-
     //TODO test removes
 
     //TODO convert ULL to use LL backend (with some additional access methods maybe, to allow the ULL attorney class to function)

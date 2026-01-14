@@ -11,6 +11,13 @@ import :BaseArena;
 import SG_AllocatorConfigs;
 import Logger;
 
+
+//TODO 
+    // See Pathfinding.txt -> summary below
+    // clean this file and reduce duplicated code
+    // make a 'NodeFactory' inner class that will create & delete nodes -> give it a 'recycle' flag that would allow it to reuse previously constructed nodes to reduce memory fragmentation
+    // make templatable for forward, backward, or double-linkage
+
 export namespace SG_Allocator {
     /**
      * @brief Homogeneous  doubly-linked list, with arena allocation support
@@ -129,7 +136,7 @@ export namespace SG_Allocator {
         //static_cast<Node *>(parent)->next->previous = static_cast<Node *>(parent);
         //static_cast<Node *>(parent)->next->next = child;
         static_cast<Node *>(parent)->next->value = value;
-		if (child != nullptr) child->previous = static_cast<Node *>(parent)->next;
+        if (child != nullptr) child->previous = static_cast<Node *>(parent)->next;
         _length++;
     }
 

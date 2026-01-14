@@ -39,7 +39,7 @@ Implementation notes:
 					Minimum priority is manhattan/chebyshev between start and end
 					Maximum priority is d
 					TODO consider how bucket size might work -> not necessarily same as bfs/dijkstra
-				Bucket queue with array containing LocalStacks or LocalHeaps
+				Bucket queue with array containing LocalStacks or LocalHeaps (because no requirement for decrease-key)
 				
 		Integer cost grid:
 			Heuristic: Manhattan/chebyshev distance
