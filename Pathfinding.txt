@@ -34,7 +34,7 @@ Implementation notes:
 			Heuristic: Manhattan/chebyshev distance
 			Priority Queue:
 				Requires priority queue -> doesn't expand predictably in same way as BFS
-				Does not require decrease-key -> never finds a faster path than already found
+				Does not require decrease-key -> never finds a faster path than already found (if heuristic is admissible)
 				Priorities:
 					Minimum priority is manhattan/chebyshev between start and end
 					Maximum priority is d
