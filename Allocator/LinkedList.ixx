@@ -12,6 +12,8 @@ import :PseudoArena;
 import SG_AllocatorConfigs;
 import Logger;
 
+// TODO examine alignment
+// TODO look at whether we can reduce branching? Can we somehow avoid
 template<typename T, bool forwardLinks, bool reverseLinks> class baseNodeLL {}; //Implementation at end of file
 export namespace SG_Allocator {
     /**
@@ -341,9 +343,8 @@ export namespace SG_Allocator {
         }
         if constexpr (reverseLinks && forwardLinks) return constructNode(a,b,args...);
         else if constexpr (reverseLinks || forwardLinks) return constructNode(a,args...);
-        return nullptr; //Should never actually get to this
+        //return nullptr; //Should never actually get to this
     }
-
 }
 
 

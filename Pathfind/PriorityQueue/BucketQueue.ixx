@@ -43,12 +43,12 @@ export namespace SG_Pathfind::PriorityQueue {
             forceInsert(value, priority);
         }
 
-        inline const T& findMin() {
+        inline const priority_t& findMin() {
             LOGGER_ASSERT_EXCEPT(length_ > 0)
             for (; minIndex < buckets.length(); ++minIndex) if (buckets.get(minIndex).length() > 0) return minIndex;
             return minIndex;
         }
-        inline const T& valueAt(const priority_t& bucket, const SG_Allocator::arenaSize_t indexInBucket = 0) { return buckets.get(bucket).get_fromFront(indexInBucket); }
+        inline const T& valueAt(const priority_t& bucket, const priority_t& indexInBucket = 0) { return buckets.get(bucket).get_fromFront(indexInBucket); }
         inline void removeAt(const priority_t& bucket, void* const& nodeAdr) { buckets.get(bucket).remove_node(nodeAdr); }
 
         void* inBucket(const T& value, const priority_t& priority) {

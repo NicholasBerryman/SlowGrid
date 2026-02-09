@@ -21,5 +21,5 @@ newTest(SparseGrid)
 newTest(RuntimeSizeGrid)
 newTest(GridRangeHashset)
 newTest(LinkedList)
-
+newTest(BucketQueue)
 

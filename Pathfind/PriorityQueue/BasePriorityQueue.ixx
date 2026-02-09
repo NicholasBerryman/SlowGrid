@@ -19,12 +19,7 @@ export namespace SG_Pathfind {
             inline const T& findMin() {Logging::assert_except(0); return nullptr;}
             inline T extractMin() {Logging::assert_except(0); return nullptr;}
             inline void decreaseKey(const T& value, const priority_t& newPriority ) {Logging::assert_except(0); }
-
-            inline const T& findMax() {Logging::assert_except(0); return nullptr;}
-            inline T extractMax() {Logging::assert_except(0); return nullptr;}
-            inline void increaseKey(const T& value, const priority_t& newPriority ) {Logging::assert_except(0); }
-
-
+            
         protected:
             BasePriorityQueue() = default;
         };
