@@ -39,7 +39,6 @@ export namespace SG_Allocator {
         inline void softClear();
         inline void expand(const arenaSize_t& newSize);
 
-		//TODO look at increasing 'length' on fragmentation -> makes these functions' assertions work even when fragmentation occurs
         template<typename T> inline T* get(const arenaSize_t& index);
         template<typename T> inline T* getFromBack(const arenaSize_t& indexFromBack);
 
@@ -53,11 +52,11 @@ export namespace SG_Allocator {
             Block(const arenaSize_t& a, alignment* const& b): remainingSpace(a), arr(b){}
         };
 
+        LinkedList<InsideArenaType, Block, arenaSize_t, true, true, false> impl;
+        void* tail = nullptr;
         InsideArenaType& arena;
-        LinkedList<InsideArenaType, Block> impl;
         arenaSize_t _length;
         const arenaSize_t blockSize;
-        void* tail = nullptr;
 
         inline void shrink();
     };
@@ -124,9 +123,10 @@ template<typename InsideArenaType, typename alignment> requires std::is_base_of_
     InsideArenaType>
 SG_Allocator::ULL<InsideArenaType, alignment>::~ULL() {
     if constexpr (std::is_base_of_v<PseudoArena, InsideArenaType>){
-        while (impl.length() > 0) {
-            arena.softDeleteArray(impl.get_fromFront(0).arr);
-            impl.remove_front();
+        void* node = impl.node_fromFront(0);
+        for (int i = 0; i < impl.length(); i++) {
+            arena.softDeleteArray(impl.get_atNode(node).arr);
+            node = impl.node_after(node);
         }
     }
 }
@@ -134,7 +134,7 @@ SG_Allocator::ULL<InsideArenaType, alignment>::~ULL() {
 
 /**
  *
- * @return arenaSize_t Maximum capacity of current ULL before a new block is allocated
+ * @return arenaSize_t Maximum capacity of current ULL before a new block is allocated (aligned to 'alignment'>
  */
 template<typename InsideArenaType, typename alignment>
 requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
@@ -271,8 +271,16 @@ template<typename InsideArenaType, typename alignment> requires std::is_base_of_
 template<typename T>
 T* SG_Allocator::ULL<InsideArenaType, alignment>::get(const arenaSize_t& index) {
     LOGGER_ASSERT_EXCEPT(index < _length);
-    arenaSize_t i = index / blockSize;
-    arenaSize_t ii = index % blockSize;
+    arenaSize_t i;
+    arenaSize_t ii;
+    if (index >= blockSize) {
+        i = index / blockSize;
+        ii = index % blockSize;
+    } else {
+        i = 0;
+        ii = index;
+    }
+
     return reinterpret_cast<T*>(&(impl.get_fromFront(i).arr[ii]));
 }
 

@@ -27,11 +27,12 @@ export namespace SG_Allocator {
 
         public:
 		Arena_ULL();
+		Arena_ULL(const Arena_ULL&) = delete;
 
     	template<typename T> inline T* alloc();
     	template<typename T> inline T* allocArray(const arenaSize_t& arrayLength);
-		template<typename T, typename... ConstructorArgs> inline T* allocConstruct(ConstructorArgs... args);
-		template<typename T, typename... ConstructorArgs> inline T* allocConstructArray(const arenaSize_t& arrayLength, ConstructorArgs... args);
+		template<typename T, typename... ConstructorArgs> inline T* allocConstruct(ConstructorArgs&&... args);
+		template<typename T, typename... ConstructorArgs> inline T* allocConstructArray(const arenaSize_t& arrayLength, ConstructorArgs&&... args);
 
     	inline void sublifetime_open();
     	inline void sublifetime_rollback();
@@ -44,8 +45,8 @@ export namespace SG_Allocator {
     	[[nodiscard]] inline arenaSize_t maxSize() const;
     	[[nodiscard]] inline arenaSize_t usedSpace() const;
 
-    	template<typename T> inline void softDelete(T* toDelete){};
-    	template<typename T> inline void softDeleteArray(T* toDelete){};
+    	template<typename T> static inline void softDelete(T* toDelete){};
+    	template<typename T> static inline void softDeleteArray(T* toDelete){};
 
 
 		private:
@@ -65,7 +66,8 @@ export namespace SG_Allocator {
  */
 template<SG_Allocator::arenaSize_t blockSize, localSize_t maxSublifetimes>
 SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::Arena_ULL():
-	impl(globalPseudoArena, blockSize)
+	impl(globalPseudoArena, blockSize),
+	sublifetimeStack()
 {}
 
 /**
@@ -105,7 +107,7 @@ T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocArray(const arenaS
  */
 template<SG_Allocator::arenaSize_t blockSize, localSize_t maxSublifetimes>
 template<typename T, typename ... ConstructorArgs>
-T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstruct(ConstructorArgs... args) {
+T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstruct(ConstructorArgs&&... args) {
 	return new (impl.alloc<T>()) T(args...);
 }
 
@@ -119,7 +121,7 @@ T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstruct(Construc
  */
 template<SG_Allocator::arenaSize_t blockSize, localSize_t maxSublifetimes>
 template<typename T, typename ... ConstructorArgs>
-T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstructArray(const arenaSize_t& arrayLength, ConstructorArgs... args) {
+T * SG_Allocator::Arena_ULL<blockSize, maxSublifetimes>::allocConstructArray(const arenaSize_t& arrayLength, ConstructorArgs&&... args) {
 	T* out = allocArray<T>(arrayLength);
 	for (auto i = 0; i < arrayLength; i++) new (&out[i]) T(args...);
 	return out;

@@ -1,61 +1,83 @@
 //
 // Created by nickberryman on 10/12/25.
 //
+module;
+#include <type_traits>
+#include "Logger.h"
+
 export module SG_Pathfind:BucketQueue;
 import :BasePriorityQueue;
 import Logger;
 import SG_Grid;
 import SG_Allocator;
 
-export namespace SG_Pathfind {
-    namespace PriorityQueue {
-        template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType>
-        class BucketQueue : private BasePriorityQueue<T, priority_t>{
-        public:
-            BucketQueue(InsideArenaType& arena, const priority_t& maxPriority, bucketSize_t* bucketSizes(const priority_t& bucketIndex) ,const priority_t& minPriority = 0) :
-                buckets(arena, maxPriority - minPriority)
-            {
-                for (priority_t i = 0; i <= maxPriority - minPriority; i++) buckets.construct_back(arena, bucketSizes(i));
-            };
-            inline void insert(const T& value, const priority_t& priority ) {
-                //TODO expand (and if debug log) if priority above max
-                buckets.get(priority).push_back(value);
-            }
-            inline bool contains(const T& value ) {
-                for (priority_t i = 0; i < buckets.length(); i++) {
-                    if (inBucket(value, i)) return true;
-                }
-                return false;
-            }
 
-            // TODO improve efficiency by adding 'min/max' variables that are tracked on insert (templatable to decide if min or max queue??)
-            inline const T& findMin() {
-                for (priority_t i = 0; i < buckets.length(); i++)
-                    if (buckets.get(i).length() > 0) return i;
-                T out; return out;
+export namespace SG_Pathfind::PriorityQueue {
+    template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true>
+    class BucketQueue : private BasePriorityQueue<T, priority_t>{
+    public:
+        BucketQueue(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) :
+            buckets(arena, maxPriority_-minPriority_+1)
+            ,minIndex(0)
+            ,minPriority(minPriority_)
+            ,length_(0)
+        #ifndef NDEBUG
+            ,maxP(maxPriority_-minPriority_)
+        #endif
+        { for (priority_t i = 0; i < buckets.maxSize(); ++i) buckets.construct_back(arena); };
+
+        inline priority_t encodePriority(const priority_t& priority){ return priority - minPriority; } //YOU NEED TO CALL THIS FIRST (EXTERNAL USE)
+
+        inline void insert(const T& value, const priority_t& priority ) {
+            void* node = nullptr;
+            priority_t bucket = minIndex;
+            for (;bucket < buckets.length(); ++bucket) {
+                node = inBucket(value, bucket);
+                if (node != nullptr) break;
             }
-            inline const T& extractMin() {
-                for (priority_t i = 0; i < buckets.length(); i++)
-                    if (buckets.get(i).length() > 0) return buckets.get(i).pop_back();
-                T out; return out;
+            if (node != nullptr) {
+                if (priority >= bucket) return;
+                decreaseKey(node, bucket, priority);
+                return;
             }
+            forceInsert(value, priority);
+        }
 
-            inline const T& findMax() {Logging::assert_except(0); return nullptr;}
-            inline T extractMax() {Logging::assert_except(0); return nullptr;}
+        inline const T& findMin() {
+            LOGGER_ASSERT_EXCEPT(length_ > 0)
+            for (; minIndex < buckets.length(); ++minIndex) if (buckets.get(minIndex).length() > 0) return minIndex;
+            return minIndex;
+        }
+        inline const T& valueAt(const priority_t& bucket, const SG_Allocator::arenaSize_t indexInBucket = 0) { return buckets.get(bucket).get_fromFront(indexInBucket); }
+        inline void removeAt(const priority_t& bucket, void* const& nodeAdr) { buckets.get(bucket).remove_node(nodeAdr); }
 
-            //TODO look at my notes in 'Pathfinding.txt' for this
-            inline void decreaseKey(const T& value, const priority_t& newPriority ) {Logging::assert_except(0); }
-            inline void increaseKey(const T& value, const priority_t& newPriority ) {Logging::assert_except(0); }
+        void* inBucket(const T& value, const priority_t& priority) {
+            auto& bucket = buckets.get(priority);
+            for (bucketSize_t i = 0; i < bucket.length(); ++i) if (void* node = bucket.node_fromFront(i); value == bucket.get_atNode(node)) return node;
+            return nullptr;
+        }
+        inline void decreaseKey(void* const& nodeAdr, const priority_t& oldPriority, const priority_t& newPriority ) {
+            forceInsert(buckets.get(oldPriority).get_atNode(nodeAdr), newPriority);
+            if constexpr (fullDecreaseKey) removeAt(oldPriority, nodeAdr);
+        }
 
-        private:
-            SG_Allocator::ULL2<InsideArenaType, SG_Allocator::ULL2<InsideArenaType, T>> buckets;
+        inline void forceInsert(const T& value, const priority_t& priority ) {
+            LOGGER_ASSERT_EXCEPT(priority <= maxP)
+            LOGGER_ASSERT_EXCEPT(priority >= minIndex)
+            buckets.get(priority).construct_front(value);
+            ++length_;
+        }
 
-            bool inBucket(const T& value, const priority_t& priority) {
-                auto& bucket = buckets.get(priority);
-                for (bucketSize_t i = 0; i < bucket.length(); i++)
-                    if (value == bucket.get(i)) return true;
-                return false;
-            }
-        };
-    }
+    private:
+        SG_Allocator::ULL2<InsideArenaType, SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, true>> buckets; //TODO try to make work with just a singly-linked list?
+
+        priority_t minIndex;
+        priority_t minPriority;
+        priority_t length_;
+
+        #ifndef NDEBUG
+        priority_t maxP;
+        #endif
+    };
 }
+

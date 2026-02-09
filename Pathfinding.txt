@@ -12,7 +12,6 @@ Implementation notes:
 			- Uses a simple queue to track visited nodes and prevent revisit
 			- O(kd) membership operation
 			- O(kd) memory
-		
 		Only works on uniform cost grids !!!
 		Should be templatable hashset vs queue
 		
@@ -23,7 +22,6 @@ Implementation notes:
 			Bucket/HOT queue or binary heap (w/ decrease-key)
 		Floating cost grid:
 			Binary heap (w/ decrease-key)
-		
 		Avoiding decrease-key:
 			Just add a duplicate node at the lower priority
 			Increases memory usage, but almost always faster
@@ -68,13 +66,7 @@ Implementation notes:
 			Should be templatable to use ULL vs (non-dynamic) array representation
 
 	Linked List notes:
-		Should be templatable to use pop_front vs pop_back (forward linked vs reverse linked) (or both for doubly-linked)
-		Should have optional 'recycleNodes' flag -> reduces memory fragmentation esp for Arena allocation
-		    'NodeManager' class:
-		        - Provides nodes to linked list
-		        - Constructs nodes if it has none in stock
-		        - Is given nodes when they are removed -> Lets us recycle nodes
-
+		Should be templatable to use pop_front (forward linked) vs pop_back (doubly-linked)
 
 
 

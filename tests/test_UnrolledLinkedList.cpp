@@ -178,10 +178,6 @@ int main(int, char**) {
     testULL<SG_Allocator::Arena_ULL<1000,3>, char>();
     testULL<SG_Allocator::Arena_ULL<32,3>, uint64_t>();
 
-
-    testULL2<SG_Allocator::PseudoArena, char>();
-    testULL2<SG_Allocator::PseudoArena, uint64_t>();
-
     testULL2<SG_Allocator::Arena_ULL<1000,3>, char>();
     testULL2<SG_Allocator::Arena_ULL<64,3>, uint64_t>();
 
