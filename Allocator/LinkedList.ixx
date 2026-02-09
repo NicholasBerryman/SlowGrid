@@ -13,7 +13,7 @@ import SG_AllocatorConfigs;
 import Logger;
 
 // TODO examine alignment
-// TODO look at whether we can reduce branching? Can we somehow avoid
+// TODO look at whether we can reduce branching? Look at sentinel nodes??
 template<typename T, bool forwardLinks, bool reverseLinks> class baseNodeLL {}; //Implementation at end of file
 export namespace SG_Allocator {
     /**
@@ -230,13 +230,13 @@ export namespace SG_Allocator {
     void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_front() requires forwardLinks{ SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, false) }
 
     /**
-     * Remove specified INTERNAL node from list. Do not use for first/last node. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
+     * Remove specified INTERNAL node from list. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param node Address of node to remove. Treat as invalid after this call
      */
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
     void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_node(void * const &node) requires (reverseLinks && forwardLinks) {
-        LOGGER_ASSERT_EXCEPT(node != base::root)
-        LOGGER_ASSERT_EXCEPT(node != base::tail)
+        if (node == base::tail) {remove_back(); return;}
+        if (node == base::root) {remove_front(); return;}
         static_cast<Node *>(node)->previous->next = static_cast<Node *>(node)->next; \
         static_cast<Node *>(node)->next->previous = static_cast<Node *>(node)->previous; \
         /*if (node == base::tail) base::tail = static_cast<Node *>(node)->previous; if (node == base::root) base::root = static_cast<Node *>(node)->next;*/ \

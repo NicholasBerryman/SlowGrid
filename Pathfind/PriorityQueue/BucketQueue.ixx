@@ -11,7 +11,7 @@ import Logger;
 import SG_Grid;
 import SG_Allocator;
 
-
+//TODO add template option for FIFO or LIFO within buckets
 export namespace SG_Pathfind::PriorityQueue {
     template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true>
     class BucketQueue : private BasePriorityQueue<T, priority_t>{
@@ -29,6 +29,10 @@ export namespace SG_Pathfind::PriorityQueue {
         inline priority_t encodePriority(const priority_t& priority){ return priority - minPriority; } //YOU NEED TO CALL THIS FIRST (EXTERNAL USE)
 
         inline void insert(const T& value, const priority_t& priority ) {
+            #ifndef NDEBUG
+                if (length_ > 0) findMin();
+                LOGGER_ASSERT_EXCEPT (priority >= minIndex);
+            #endif
             void* node = nullptr;
             priority_t bucket = minIndex;
             for (;bucket < buckets.length(); ++bucket) {
@@ -43,19 +47,37 @@ export namespace SG_Pathfind::PriorityQueue {
             forceInsert(value, priority);
         }
 
+        inline const T& valueAt(const priority_t& bucket, const priority_t& indexInBucket = 0) {
+            LOGGER_ASSERT_EXCEPT(length_ > 0)
+            return buckets.get(bucket).get_fromFront(indexInBucket);
+        }
+
         inline const priority_t& findMin() {
             LOGGER_ASSERT_EXCEPT(length_ > 0)
             for (; minIndex < buckets.length(); ++minIndex) if (buckets.get(minIndex).length() > 0) return minIndex;
             return minIndex;
         }
-        inline const T& valueAt(const priority_t& bucket, const priority_t& indexInBucket = 0) { return buckets.get(bucket).get_fromFront(indexInBucket); }
-        inline void removeAt(const priority_t& bucket, void* const& nodeAdr) { buckets.get(bucket).remove_node(nodeAdr); }
+
+        inline T extractMin() {
+            LOGGER_ASSERT_EXCEPT(length_ > 0)
+            auto& out = buckets.get(findMin()).get_fromFront(0);
+            buckets.get(findMin()).remove_front();
+            --length_;
+            return out;
+        }
 
         void* inBucket(const T& value, const priority_t& priority) {
             auto& bucket = buckets.get(priority);
             for (bucketSize_t i = 0; i < bucket.length(); ++i) if (void* node = bucket.node_fromFront(i); value == bucket.get_atNode(node)) return node;
             return nullptr;
         }
+
+        inline void removeAt(const priority_t& bucket, void* const& nodeAdr) {
+            LOGGER_ASSERT_EXCEPT(length_ > 0)
+            buckets.get(bucket).remove_node(nodeAdr);
+            --length_;
+        }
+
         inline void decreaseKey(void* const& nodeAdr, const priority_t& oldPriority, const priority_t& newPriority ) {
             forceInsert(buckets.get(oldPriority).get_atNode(nodeAdr), newPriority);
             if constexpr (fullDecreaseKey) removeAt(oldPriority, nodeAdr);

@@ -13,6 +13,8 @@ import :UnrolledLinkedList;
 import :PseudoArena;
 import LocalDataStructures;
 
+
+//TODO add option to return 'ArenaPointers' instead of normal pointers -> can be smaller than a normal pointer, should overload the -> and *() operators, but you can't just get the address of a given value, so might be weaker? -> Also add a NULLPTR equivalend (max value??)
 export namespace SG_Allocator {
 	PseudoArena globalPseudoArena;
 
