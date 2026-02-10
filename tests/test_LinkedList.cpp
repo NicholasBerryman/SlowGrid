@@ -12,7 +12,7 @@ import SG_Allocator;
 template <typename a, typename align, bool recycle = true>
 void testLLDoubleLinked(){
     a myHeap;
-    SG_Allocator::LinkedList2<a, align, SG_Allocator::arenaSize_t, true, true, recycle> ll(myHeap);
+    SG_Allocator::LinkedList<a, align, SG_Allocator::arenaSize_t, true, true, recycle> ll(myHeap);
 
     assert(ll.length() == 0);
     ll.construct_back(16);
@@ -86,6 +86,40 @@ void testLLDoubleLinked(){
 	
 	ll.remove_front();
 	assert(ll.length() == 0);
+
+	SG_Allocator::Arena_ULL<10000, 256> arena;
+	SG_Allocator::LinkedList<SG_Allocator::Arena_ULL<10000, 256>, uint64_t, uint64_t> lll(arena);
+
+	uint64_t x = 16;
+	for (int i = 0; i < 16; i++) {
+		x = i;
+		lll.construct_front(x);
+	}
+	for (int i = 0; i < 16; i++) {
+		x = lll.get_fromFront(0);
+		lll.remove_front();
+	}
+	lll.clear();
+	arena.clear(); //Checks for leaking arena pointers
+	for (int i = 0; i < 8; i++) {
+		x = i;
+		lll.construct_front(x);
+	}
+	for (int i = 0; i < 8; i++) {
+		x = lll.get_fromFront(0);
+		lll.remove_front();
+	}
+	for (int i = 0; i < 20; i++) arena.allocConstruct<uint64_t>(0xFF);
+	for (int i = 0; i < 8; i++) {
+		x = i;
+		lll.construct_front(x);
+	}
+	for (int i = 0; i < 8; i++) {
+		x = lll.get_fromFront(0);
+		lll.remove_front();
+	}
+	lll.clear();
+	arena.clear();
 
 	// TODO maybe add faster linked-list template option with less runtime checking (trusting in compile-time correct use)???
 }

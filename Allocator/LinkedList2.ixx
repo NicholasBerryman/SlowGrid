@@ -66,6 +66,7 @@ export namespace SG_Allocator {
             void deleteNode(Node* const& toDelete);
             void forceDeleteNode(Node* const& toDelete);
             template<typename... ConstructorArgs> Node* provideNode(Node* const& a, Node* const& b, ConstructorArgs&& ... args);
+            void clear(){if constexpr (recycleNodes) impl.clear();}
         private:
             typedef LinkedList2<InsideArenaType, Node*, index_t ,true, false, false> impl_t;
             struct empty_ {};
@@ -91,7 +92,7 @@ export namespace SG_Allocator {
         if constexpr (checkDirection && !clr) from.direction->d2 = &(from); \
         if constexpr (!clr) factory.deleteNode(delNode); \
         else factory.forceDeleteNode(delNode); \
-        _length--;
+        --_length;
 
     /**
      * Remove last node from list. Calls default destructor on its value - manually destruct first using get_atNode(node_fromBack(0)) if you want non-default destruction
@@ -328,17 +329,8 @@ export namespace SG_Allocator {
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
     void LinkedList2<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::clear() {
         if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true);}
-        else if constexpr (forwardLinks) while (_length > 0) {
-            //SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true);
-            if constexpr (true) if (_length == 0) {return;}\
-            LOGGER_ASSERT_EXCEPT(_length > 0) \
-            Node* delNode = base::root.next; \
-            base::root.next = delNode->next; \
-            if constexpr (reverseLinks && !true) base::root.direction->d2 = &(base::root); \
-            if constexpr (!true) factory.deleteNode(delNode); \
-            else factory.forceDeleteNode(delNode); \
-            --_length;
-        }
+        else if constexpr (forwardLinks) while (_length > 0) { SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true); }
+        factory.clear();
     }
 
 }

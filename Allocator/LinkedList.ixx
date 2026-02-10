@@ -13,7 +13,6 @@ import SG_AllocatorConfigs;
 import Logger;
 
 // TODO examine alignment
-// TODO look at whether we can reduce branching? Look at sentinel nodes??
 template<typename T, bool forwardLinks, bool reverseLinks> class baseNodeLL {}; //Implementation at end of file
 export namespace SG_Allocator {
     /**
@@ -67,6 +66,7 @@ export namespace SG_Allocator {
             void deleteNode(Node* const& toDelete);
             void forceDeleteNode(Node* const& toDelete);
             template<typename... ConstructorArgs> Node* provideNode(Node* const& a, Node* const& b, ConstructorArgs&& ... args);
+            void clear(){if constexpr (recycleNodes) impl.clear();}
         private:
             typedef LinkedList<InsideArenaType, Node*, index_t ,true, false, false> impl_t;
             struct empty_ {};
@@ -317,6 +317,7 @@ export namespace SG_Allocator {
     void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::clear() {
         if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true);}
         else if constexpr (forwardLinks) while (_length > 0) {SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true);}
+        factory.clear();
     }
 
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
