@@ -19,6 +19,7 @@ target_sources(SG_Allocator
         PseudoArena.ixx
         Arena_ULL.ixx
         CachedQueue.ixx
+        LinkedList2.ixx
 )
 target_include_directories(SG_Allocator PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/")
 target_link_libraries(SG_Allocator PRIVATE LocalDataStructures Logger)

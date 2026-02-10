@@ -12,14 +12,13 @@ import SG_Allocator;
 template <typename a, typename align, bool recycle = true>
 void testLLDoubleLinked(){
     a myHeap;
-    SG_Allocator::LinkedList<a, align, SG_Allocator::arenaSize_t, true, true, recycle> ll(myHeap);
+    SG_Allocator::LinkedList2<a, align, SG_Allocator::arenaSize_t, true, true, recycle> ll(myHeap);
 
     assert(ll.length() == 0);
     ll.construct_back(16);
     assert(ll.length() == 1);
     assert(ll.get_fromFront(0) == 16);
     assert(ll.get_fromBack(0) == 16);
-
 
     ll.construct_back(11);
     assert(ll.length() == 2);
@@ -94,7 +93,7 @@ void testLLDoubleLinked(){
 template <typename a, typename align, bool recycle = true>
 void testLLForwardLink(){
     a myHeap;
-    SG_Allocator::LinkedList<a, align, SG_Allocator::arenaSize_t, true, false, recycle> llf(myHeap);
+    SG_Allocator::LinkedList2<a, align, SG_Allocator::arenaSize_t, true, false, recycle> llf(myHeap);
 
 	assert(llf.length() == 0);
 	llf.construct_front(16);
