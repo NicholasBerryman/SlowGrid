@@ -35,7 +35,7 @@ export namespace SG_Grid {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return (smartFind(at.x(),at.y()) >> (at.x()%8)) & 1;
         }
-        inline const T& get(const Point& at) requires (!isBitfield) {
+        inline T& get(const Point& at) requires (!isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return smartFind(at.x(),at.y());
         }

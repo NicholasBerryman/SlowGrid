@@ -6,6 +6,7 @@ module;
 export module SG_Pathfind;
 export import :BasePriorityQueue;
 export import :BucketQueue;
-export import :BaseHashSet;
-export import :GridRangeHashSet;
+export import :BaseHashMap;
+export import :GridRangeHashMap;
+export import :HashMapBucketQueue;
 

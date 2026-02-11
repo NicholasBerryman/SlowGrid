@@ -12,6 +12,7 @@ import SG_Grid;
 import SG_Allocator;
 
 //TODO add template option for FIFO or LIFO within buckets
+//TODO double-check that A* with an admissible heuristic still satisfies the 'monotonic increasing' assumption that this uses here
 export namespace SG_Pathfind::PriorityQueue {
     template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true>
     class BucketQueue : private BasePriorityQueue<T, priority_t>{
@@ -26,7 +27,10 @@ export namespace SG_Pathfind::PriorityQueue {
         #endif
         { for (priority_t i = 0; i < buckets.maxSize(); ++i) buckets.construct_back(arena); };
 
+        inline const priority_t& length(){ return length_; }
+
         inline priority_t encodePriority(const priority_t& priority){ return priority - minPriority; } //YOU NEED TO CALL THIS FIRST (EXTERNAL USE)
+        inline priority_t decodePriority(const priority_t& priority){ return priority + minPriority; }
 
         inline void insert(const T& value, const priority_t& priority ) {
             #ifndef NDEBUG
@@ -83,11 +87,17 @@ export namespace SG_Pathfind::PriorityQueue {
             if constexpr (fullDecreaseKey) removeAt(oldPriority, nodeAdr);
         }
 
-        inline void forceInsert(const T& value, const priority_t& priority ) {
+        inline void* decreaseKeyAndReturn(void* const& nodeAdr, const priority_t& oldPriority, const priority_t& newPriority ) {
+            auto out = forceInsert(buckets.get(oldPriority).get_atNode(nodeAdr), newPriority);
+            if constexpr (fullDecreaseKey) removeAt(oldPriority, nodeAdr);
+            return out;
+        }
+
+        inline void* forceInsert(const T& value, const priority_t& priority ) {
             LOGGER_ASSERT_EXCEPT(priority <= maxP)
             LOGGER_ASSERT_EXCEPT(priority >= minIndex)
-            buckets.get(priority).construct_front(value);
             ++length_;
+            return buckets.get(priority).construct_front(value);
         }
 
     private:

@@ -9,9 +9,9 @@ target_sources(SG_Pathfind
                 PriorityQueue/BasePriorityQueue.ixx
                 PriorityQueue/BucketQueue.ixx
                 PriorityQueue/BinaryHeap.ixx
-                PriorityQueue/HashSetBucketQueue.ixx
-                PriorityQueue/HashSetBinaryHeap.ixx
-                HashSet/BaseHashSet.ixx
-                HashSet/GridRangeHashset.ixx
+                PriorityQueue/HashMapBucketQueue.ixx
+                PriorityQueue/HashMapBinaryHeap.ixx
+                HashMap/BaseHashMap.ixx
+                HashMap/GridRangeHashmap.ixx
 )
 target_link_libraries(SG_Pathfind PRIVATE Logger SG_Allocator SG_Grid)

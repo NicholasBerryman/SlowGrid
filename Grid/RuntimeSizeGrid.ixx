@@ -19,12 +19,13 @@ export namespace SG_Grid {
      */
     template <typename T, bool useBitfield = false>
     class RuntimeSizeGrid : private BaseGrid<T> {
+        static_assert(!useBitfield | std::is_same<T, bool>::value, "Bitfields can only be used with booleans");
     public:
         template<typename InsideArenaType>
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         RuntimeSizeGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){}
 
-        inline const T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
+        inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
 
         inline void set(const Point& at, const T& value) {impl.set(at, value);}

@@ -10,6 +10,8 @@ import :BaseGrid;
 import SG_GridConfigs;
 import Logger;
 
+
+//TODO add compile-time check to change to return-by-value on get() for bitfield chunks
 export namespace SG_Grid {
     /**
      * @brief Grid to sparsely store arbitrary type data.
@@ -23,7 +25,7 @@ export namespace SG_Grid {
         static_assert(width_ > 0 && height_ > 0 && Chunk_T::compileTimeWidth() > 0, "Width and height must be positive and known at compile time (including for inner chunks)");
     public:
         SparseGrid(){}
-        inline const Chunk_T::value_type& get(const Point& at){
+        inline Chunk_T::value_type& get(const Point& at){
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()];
             Point inChunk = Point(at.x()%Chunk_T::compileTimeWidth(), at.y()%Chunk_T::compileTimeHeight());

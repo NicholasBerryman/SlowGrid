@@ -11,11 +11,12 @@ import SG_Allocator;
 import SG_Grid;
 import SG_Pathfind;
 
+//TODO test that it sizes itself correctly on the edges, not just the middle like this
 template <typename T>
 void testOnStack(){
     SG_Allocator::Arena_ULL<50000,3> arena;
     SG_Grid::FullGrid<T,11,11> grid;
-    SG_Pathfind::HashSet::GridRangeHashset<> hash(arena, grid, SG_Grid::Point(5,5), 3);
+    SG_Pathfind::HashMap::GridRangeHashMap<> hash(arena, grid, SG_Grid::Point(5,5), 3);
 
     assert(hash.calcHash(SG_Grid::Point(4,4)) == SG_Grid::Point(2,2));
     assert(hash.calcHash(SG_Grid::Point(8,8)) == SG_Grid::Point(6,6));
