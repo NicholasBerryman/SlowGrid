@@ -311,12 +311,18 @@ export namespace SG_Allocator {
     T & LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::get_fromBack(const index_t &index) requires reverseLinks { SG_LL_getFromFrontBack(base::tail, previous); }
 
     /**
-     * Remove all elements from the list, using default destructors
+     * Sets list to empty. Destructs allocated memory for PseudoArenas, but does not for other Arenas. For other Arenas, should generally only be called before clearing the arena or rolling back the sublifetime.
      */
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
     void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::clear() {
-        if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true);}
-        else if constexpr (forwardLinks) while (_length > 0) {SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true);}
+        if constexpr (!std::is_base_of_v<PseudoArena, InsideArenaType>){
+            if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true);}
+            else if constexpr (forwardLinks) while (_length > 0) {SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true);}
+        } else {
+            if constexpr (forwardLinks) base::root = nullptr;
+            if constexpr (reverseLinks) base::tail = nullptr;
+            _length = 0;
+        }
         factory.clear();
     }
 

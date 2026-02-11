@@ -309,14 +309,14 @@ export namespace SG_Allocator {
         else remove_nodeBefore(fun(index+1));
 
     /**
-     * Remove specified INTERNAL node from list. Do not use for first/last node. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
+     * Remove specified node from list. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param index Index of node to remove.
      */
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
     void LinkedList2<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_fromFront(const int &index) requires forwardLinks { SG_LL_removeFromFrontFromBack(node_fromFront) }
 
     /**
-     * Remove specified INTERNAL node from list. Do not use for first/last node. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
+     * Remove specified node from list. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param index Index of node to remove.
      */
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
@@ -324,12 +324,14 @@ export namespace SG_Allocator {
 
 
     /**
-     * Remove all elements from the list, using default destructors
+     * Sets list to empty. Destructs allocated memory for PseudoArenas, but does not for other Arenas. For other Arenas, should generally only be called before clearing the arena or rolling back the sublifetime.
      */
     template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
     void LinkedList2<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::clear() {
-        if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true);}
-        else if constexpr (forwardLinks) while (_length > 0) { SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true); }
+        if constexpr (!std::is_base_of_v<PseudoArena, InsideArenaType>){
+            if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true);}
+            else if constexpr (forwardLinks) while (_length > 0) { SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true); }
+        } else _length = 0;
         factory.clear();
     }
 
