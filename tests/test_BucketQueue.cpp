@@ -51,8 +51,8 @@ void testBucketQueue(){
 
 
 int main(int, char**) {
-    testBucketQueue<SG_Allocator::Arena_ULL<1000,3>, char>();
-    testBucketQueue<SG_Allocator::Arena_ULL<640,3>, uint64_t>(); // A linked list is minimum 64 bytes with current settings -> 640 allows for a BucketQueue with length 10 to be initialised
+    testBucketQueue<SG_Allocator::Arena_ULL<2000,3>, char>();
+    testBucketQueue<SG_Allocator::Arena_ULL<1040,3>, uint64_t>(); //TODO figure out if we can shrink this???
 
     return 0;
 }

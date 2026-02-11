@@ -9,7 +9,7 @@ module;
 export module SG_Allocator:UnrolledLinkedList;
 import :BaseArena;
 import :PseudoArena;
-import :LinkedList;
+import :LinkedList2;
 import SG_AllocatorConfigs;
 import Logger;
 
