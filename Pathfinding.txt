@@ -2,6 +2,37 @@
 Implementation notes:
 	d -> max distance
 	
+	Spatial Hashsets:
+		General Notes:
+			Separate 'contains()' boolean datastructure from actual map values
+				Only the 'contains()' needs to be memset, actual map data initialisation state can be inferred from that
+				
+		Implementations:
+			Perfect grid hash:
+				No collisions
+				High memory: O(d^2) -> very big memset required!!
+				Equivalent to Quad Partition with size 0, but probably faster to implement different methods at compile-time
+			Quad Partition Spatial hash:
+				Introduce new field 'p' -> partition depth i.e. 2,4,8,etc partitions
+				Collisions occur, but colliding grid squares are spatially distant if p is low
+				Medium memory if sparsely implemented: O(d^2 / 4^p)
+		
+		Handling collisions:
+			Only really matters for contains()
+				get() can use the same structure or a completely different structure
+				Can get some small performance benefit on collisions if they both use an UnrolledLinkedList of the same collision depth
+			Per-square Linked Lists:
+				contains() struct per grid square: {partitionId, LinkedList<boolean|bitfield>}
+				Accessing first insertion -> Traverse list: slow O(1)
+				Accessing collision insertions -> Traverse list: slow O(p)
+				Probably best option when p > 1 where collisions are rare
+			Single shared UnrolledLinkedList:
+				contains() struct per grid square: {partitionId, boolean|bitfield)
+				Shared collision list: ULL<{trueX, trueY, isFinal, boolean|bitfield}>
+				Accessing first insertion: fast O(1)
+				Accessing collision insertions: Traverse list: fast O(d^2/4^p)
+				Probably best option when p == 1 where collisions are common
+				
 	Breadth First:
 		Does not need priority queue!!!
 		Hashset implementation:
