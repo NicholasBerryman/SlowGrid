@@ -15,34 +15,36 @@ import :BucketQueue;
 
 
 //TODO add template option for FIFO or LIFO within buckets
-//TODO add template to swap between bucket-indices being in structs or in hashmap. Maybe even completely refactor BucketQueue to use only a single LinkedList with a ULL of void* for bucket locations, instead of the ULL of LLs
-//TODO remove double-up distance parameters, and add a bool template to swap between manhattan and chebyshev for priority queue -> automaticall convert to chebyshev for hashset always
+//TODO Maybe completely refactor BucketQueue to use only a single LinkedList with a ULL of void* for bucket locations, instead of the ULL of LLs
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool uniformCost = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
     class HashMapBucketQueue {
     public:
-        HashMapBucketQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxDistanceSelectedMetric, const SG_Grid::coordinate_t& minDistanceSelectedMetric = 0) :
-            queue(arena, maxDistanceSelectedMetric, minDistanceSelectedMetric), 
-            hashMap(arena, within, centrePoint, maxDistanceChebyshev, {nullptr, 0})
-            {}
+        HashMapBucketQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
+            queue(arena, maxCost, minCost), 
+            hashMap(arena, within, centrePoint, maxDistanceChebyshev) {}
     
     inline const SG_Grid::Point& valueAt(const SG_Grid::coordinate_t& priority, const SG_Grid::coordinate_t& indexInBucket = 0) { return queue.valueAt(queue.encodePriority(priority), indexInBucket); }
     inline SG_Grid::coordinate_t findMin() { return queue.decodePriority(queue.findMin()); }
     inline const SG_Grid::coordinate_t& length(){ return queue.length(); }
     inline SG_Grid::Point extractMin() requires (noHashSet || uniformCost) { return queue.extractMin(); }
     inline SG_Grid::Point extractMin() requires (!noHashSet && !uniformCost) { 
-        auto out = queue.extractMin();
-        hashMap.get(out).node = nullptr; // Not sure if this is necessary, but probably safest to keep it in just in case
+        SG_Grid::Point out = queue.extractMin();
+        hashMap.remove(out);
         return out;
     }
     
-    inline void insert(const SG_Grid::Point& value, const SG_Grid::coordinate_t& priority_ ) {
-        // Note that 'value' is actually the key in the hashmap, but is still a value in the queue
+    inline void insert(const SG_Grid::Point& tile, const SG_Grid::coordinate_t& priority_ ) {
         auto priority = queue.encodePriority(priority_);
-        if constexpr (noHashSet) queue.insert(value, priority);
+        if constexpr (noHashSet) queue.insert(tile, priority);
         else {
-            nodeAddress& toCheck = hashMap.get(value);
-            if (toCheck.node == nullptr) { toCheck.node = queue.forceInsert(value, priority); toCheck.priority = priority; return; }
+            nodeAddress& toCheck = hashMap.get(tile);
+            if (!hashMap.contains(tile)) {
+                hashMap.insert(tile);
+                toCheck.node = queue.forceInsert(tile, priority); 
+                toCheck.priority = priority; 
+                return; 
+             }
             if constexpr (uniformCost) return;
             if (toCheck.priority <= priority) return;
             toCheck.node = queue.decreaseKeyAndReturn(toCheck.node, toCheck.priority, priority);
@@ -52,11 +54,11 @@ export namespace SG_Pathfind::PriorityQueue {
     
     private:
         struct nodeAddress {
-            void* node = nullptr;
-            SG_Grid::coordinate_t priority = 0;
+            void* node;
+            SG_Grid::coordinate_t priority;
         };
         struct empty{};
         BucketQueue<SG_Grid::Point, SG_Grid::coordinate_t, SG_Grid::coordinate_t, InsideArenaType> queue;
-        std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<nodeAddress>>  hashMap;
+        std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<nodeAddress, useBitfield>>  hashMap;
     };
 }

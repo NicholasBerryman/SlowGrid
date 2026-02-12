@@ -18,9 +18,6 @@ Implementation notes:
 				Medium memory if sparsely implemented: O(d^2 / 4^p)
 		
 		Handling collisions:
-			Only really matters for contains()
-				get() can use the same structure or a completely different structure
-				Can get some small performance benefit on collisions if they both use an UnrolledLinkedList of the same collision depth
 			Per-square Linked Lists:
 				contains() struct per grid square: {partitionId, LinkedList<boolean|bitfield>}
 				Accessing first insertion -> Traverse list: slow O(1)
@@ -32,6 +29,9 @@ Implementation notes:
 				Accessing first insertion: fast O(1)
 				Accessing collision insertions: Traverse list: fast O(d^2/4^p)
 				Probably best option when p == 1 where collisions are common
+			Only really matters for contains()
+				get() can use the same structure or a completely different structure
+				Can get some small performance benefit on collisions if they both use an UnrolledLinkedList of the same collision depth
 				
 	Breadth First:
 		Does not need priority queue!!!

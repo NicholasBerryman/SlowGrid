@@ -3,6 +3,8 @@
 //
 module;
 #include "Logger.h"
+#include <cstring>
+
 export module SG_Grid:FullGrid;
 import :Point;
 import :BaseGrid;
@@ -60,6 +62,10 @@ export namespace SG_Grid {
                     else find(x,y) = 0;
                 }
         }
+        inline void fill_memset(const char& toFill){
+            if constexpr (width_ != 0) std::memset(&impl, toFill, height_ * compileTimeInternalWidth());
+            else std::memset(impl, toFill, height() * internalWidth(width()) * sizeof(internalT));
+        }
 
         [[nodiscard]] const coordinate_t& width() const { return width_var; }
         [[nodiscard]] const coordinate_t& height() const { return height_var; }
@@ -82,6 +88,6 @@ export namespace SG_Grid {
         inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (!isBitfield) { return find(x,y); }
         inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (isBitfield) { return find(x/8,y); }
 
-        [[nodiscard]] static inline coordinate_t internalWidth(const coordinate_t& x) { if (isBitfield) return x/8+(x%8 > 0); return x;}
+        [[nodiscard]] static inline coordinate_t internalWidth(const coordinate_t& x) { if constexpr (isBitfield) return x/8+(x%8 > 0); return x;}
     };
 }

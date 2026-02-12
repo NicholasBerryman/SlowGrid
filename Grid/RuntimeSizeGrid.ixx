@@ -32,6 +32,7 @@ export namespace SG_Grid {
         inline const coordinate_t& width(){return impl.width();}
         inline const coordinate_t& height(){return impl.height();}
         inline void fill(const T& value){impl.fill(value);}
+        inline void fill_memset(const char& value){impl.fill_memset(value);}
         typedef T value_type;
 
     private:

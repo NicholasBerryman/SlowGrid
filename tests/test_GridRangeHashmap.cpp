@@ -21,21 +21,21 @@ void testOnStack(){
     assert(hash.calcHash(SG_Grid::Point(4,4)) == SG_Grid::Point(2,2));
     assert(hash.calcHash(SG_Grid::Point(8,8)) == SG_Grid::Point(6,6));
 
-    LOGGER_ASSERT_EXCEPT(!hash.contains(SG_Grid::Point(6,6)));
-    LOGGER_ASSERT_EXCEPT(!hash.contains(SG_Grid::Point(3,2)));
-    LOGGER_ASSERT_EXCEPT(!hash.contains(SG_Grid::Point(2,7)));
-    LOGGER_ASSERT_EXCEPT(!hash.contains(SG_Grid::Point(8,8)));
-    LOGGER_ASSERT_EXCEPT(!hash.contains(SG_Grid::Point(4,3)));
+    assert(!hash.contains(SG_Grid::Point(6,6)));
+    assert(!hash.contains(SG_Grid::Point(3,2)));
+    assert(!hash.contains(SG_Grid::Point(2,7)));
+    assert(!hash.contains(SG_Grid::Point(8,8)));
+    assert(!hash.contains(SG_Grid::Point(4,3)));
 
     hash.insert(SG_Grid::Point(3,7));
     hash.insert(SG_Grid::Point(8,8));
     hash.insert(SG_Grid::Point(2,2));
-    LOGGER_ASSERT_EXCEPT(hash.contains(SG_Grid::Point(3,7)));
-    LOGGER_ASSERT_EXCEPT(hash.contains(SG_Grid::Point(8,8)));
-    LOGGER_ASSERT_EXCEPT(hash.contains(SG_Grid::Point(2,2)));
+    assert(hash.contains(SG_Grid::Point(3,7)));
+    assert(hash.contains(SG_Grid::Point(8,8)));
+    assert(hash.contains(SG_Grid::Point(2,2)));
 
     hash.remove(SG_Grid::Point(2,2));
-    LOGGER_ASSERT_EXCEPT(!hash.contains(SG_Grid::Point(2,2)));
+    assert(!hash.contains(SG_Grid::Point(2,2)));
 
     LOGGER_ASSERT_ERROR( hash.contains(SG_Grid::Point(1,2)); )
     LOGGER_ASSERT_ERROR( auto x = hash.calcHash(SG_Grid::Point(5,9)); )
