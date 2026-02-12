@@ -37,6 +37,7 @@ export namespace SG_Allocator {
         inline void fill(const T& value){ for (arenaSize_t i = 0; i < impl.maxSize(); i++) (*impl.template get<T>(i)) = value; }
 
         template<typename... ConstructorArgs> inline T& construct_back(ConstructorArgs&&... args) { return * (new (impl.template alloc<T>()) T(args...)); }
+        template<typename... ConstructorArgs> inline T* alloc_back(const arenaSize_t& count) { return impl.template allocArray<T>(count); }
         inline void push_back(const T& value){ (*impl.template alloc<T>()) = value; }
         inline T pop_back(){ const T& out = (*impl.get_fromBack(0)); impl.dealloc(1); return out;}
         inline const T& back(){ return (*impl.template getFromBack<T>(0)); }

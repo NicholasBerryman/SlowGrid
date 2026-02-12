@@ -28,12 +28,12 @@ export namespace SG_Pathfind::PriorityQueue {
     inline SG_Grid::coordinate_t findMin() { return queue.decodePriority(queue.findMin()); }
     inline const SG_Grid::coordinate_t& length(){ return queue.length(); }
     inline SG_Grid::Point extractMin() requires (noHashSet || uniformCost) { return queue.extractMin(); }
-    inline SG_Grid::Point extractMin() requires (!noHashSet && !uniformCost) { 
+    inline SG_Grid::Point extractMin() requires (!noHashSet && !uniformCost) {
         SG_Grid::Point out = queue.extractMin();
         hashMap.remove(out);
         return out;
     }
-    
+
     inline void insert(const SG_Grid::Point& tile, const SG_Grid::coordinate_t& priority_ ) {
         auto priority = queue.encodePriority(priority_);
         if constexpr (noHashSet) queue.insert(tile, priority);
@@ -41,9 +41,9 @@ export namespace SG_Pathfind::PriorityQueue {
             nodeAddress& toCheck = hashMap.get(tile);
             if (!hashMap.contains(tile)) {
                 hashMap.insert(tile);
-                toCheck.node = queue.forceInsert(tile, priority); 
-                toCheck.priority = priority; 
-                return; 
+                toCheck.node = queue.forceInsert(tile, priority);
+                toCheck.priority = priority;
+                return;
              }
             if constexpr (uniformCost) return;
             if (toCheck.priority <= priority) return;
@@ -51,7 +51,12 @@ export namespace SG_Pathfind::PriorityQueue {
             toCheck.priority = priority;
         }
     }
-    
+
+    inline void clear() {
+        queue.clear();
+        hashMap.clear();
+    }
+
     private:
         struct nodeAddress {
             void* node;

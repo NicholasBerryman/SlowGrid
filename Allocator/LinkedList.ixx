@@ -22,14 +22,20 @@ export namespace SG_Allocator {
      * @tparam InsideArenaType Arena type to allocate blocks into (Use a PseudoArena if heap allocation preferred)
      * @tparam T Data type to use for elements
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks = true, bool reverseLinks = true, bool recycleNodes = true>
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks = true, bool reverseLinks = true, bool recycleNodes = true, bool manualConstruct = false>
     requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
     class LinkedList : private baseNodeLL<T, forwardLinks, reverseLinks>{
         static_assert(forwardLinks || !recycleNodes); //Recycling stores data with a forward linked list
     public:
-        explicit LinkedList(InsideArenaType& arena_) : factory(arena_) {};
+        explicit LinkedList(InsideArenaType& arena_) : factory(arena_) { init(arena_); };
         inline ~LinkedList() requires (!std::is_base_of_v<PseudoArena, InsideArenaType>) = default;
         inline ~LinkedList() requires std::is_base_of_v<PseudoArena, InsideArenaType> { clear(); };
+
+        void init(InsideArenaType& arena) { if constexpr (forwardLinks && reverseLinks) {
+            base::root.next = &(base::tail);
+            base::tail.previous = &(base::root);
+            if constexpr (manualConstruct) factory.setArena(arena);
+        }}
 
         void* node_fromFront(const index_t& index) requires forwardLinks;
         static void* node_after(void* const& node) requires forwardLinks {return static_cast<Node*>(node)->next;}
@@ -81,8 +87,8 @@ export namespace SG_Allocator {
 
         class NodeFactory {
         public:
-            explicit NodeFactory(InsideArenaType& arena) requires recycleNodes: impl(arena), a(arena) {};
-            explicit NodeFactory(InsideArenaType& arena) requires (!recycleNodes): a(arena) {};
+            explicit NodeFactory(InsideArenaType& arena) requires (recycleNodes && !manualConstruct): impl(arena), a(arena) {};
+            explicit NodeFactory(InsideArenaType& arena) requires (!recycleNodes && !manualConstruct): a(arena) {};
             void deleteNode(Node* const& toDelete);
             void forceDeleteNode(Node* const& toDelete);
             template<typename... ConstructorArgs> Node* provideNode(Node* const& a, Node* const& b, ConstructorArgs&& ... args);
@@ -90,15 +96,23 @@ export namespace SG_Allocator {
 
             const index_t& length(){return impl.length();};
 
+            void setArena(InsideArenaType& arena) requires manualConstruct {a = &arena;}
+
         private:
-            typedef LinkedList<InsideArenaType, T, index_t, true, false, false> impl_t;
+            typedef LinkedList<InsideArenaType, T, index_t, true, false, false, manualConstruct> impl_t;
             struct empty_ {};
 
-            std::conditional_t<recycleNodes, impl_t, empty_> impl;
-            InsideArenaType& a;
+            [[no_unique_address]] std::conditional_t<recycleNodes, impl_t, empty_> impl;
+            std::conditional_t<manualConstruct, InsideArenaType*, InsideArenaType&> a;
 
-            template<typename... ConstructorArgs> Node* constructNode(Node* const& previous_, Node* const& next_, ConstructorArgs&& ... args) requires (forwardLinks && reverseLinks) { return a.template allocConstruct<Node>(previous_, next_, args...); };
-            template<typename... ConstructorArgs> Node* constructNode(Node* const& parent_, ConstructorArgs&& ... args) requires (forwardLinks || reverseLinks && !(forwardLinks && reverseLinks)) { return a.template allocConstruct<Node>(parent_, args...); };
+            template<typename... ConstructorArgs> Node* constructNode(Node* const& previous_, Node* const& next_, ConstructorArgs&& ... args) requires (forwardLinks && reverseLinks) {
+                if constexpr (manualConstruct) return a->template allocConstruct<Node>(previous_, next_, args...);
+                else return a.template allocConstruct<Node>(previous_, next_, args...);
+            };
+            template<typename... ConstructorArgs> Node* constructNode(Node* const& parent_, ConstructorArgs&& ... args) requires (forwardLinks || reverseLinks && !(forwardLinks && reverseLinks)) {
+                if constexpr (manualConstruct) return a->template allocConstruct<Node>(parent_, args...);
+                else return a.template allocConstruct<Node>(parent_, args...);
+            };
         } factory;
         index_t _length = 0;
     };
@@ -119,20 +133,20 @@ export namespace SG_Allocator {
     /**
      * Remove last node from list. Calls default destructor on its value - manually destruct first using get_atNode(node_fromBack(0)) if you want non-default destruction
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_back() requires reverseLinks{ SG_LL_removeFrontBack((base::tail), previous, next, forwardLinks, false, false) }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_back() requires reverseLinks{ SG_LL_removeFrontBack((base::tail), previous, next, forwardLinks, false, false) }
 
     /**
      * Remove first node from list. Calls default destructor on its value - manually destruct first using get_atNode(node_fromFront(0)) if you want non-default destruction
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_front() requires forwardLinks{ SG_LL_removeFrontBack((base::root), next, previous, reverseLinks, false, false) }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_front() requires forwardLinks{ SG_LL_removeFrontBack((base::root), next, previous, reverseLinks, false, false) }
 
     /**
      * Remove first node from list non-destructively. Doesn't free memory, even if inside a PseudoArena. Doesn't call destructor.
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::shiftOutNode_front() requires forwardLinks{ SG_LL_removeFrontBack((base::root), next, previous, reverseLinks, false, true) }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::shiftOutNode_front() requires forwardLinks{ SG_LL_removeFrontBack((base::root), next, previous, reverseLinks, false, true) }
 
     #define SG_LL_pushFrontBack(from, direction, before, after) \
         from.direction = factory.provideNode(before, after, args...); \
@@ -144,8 +158,8 @@ export namespace SG_Allocator {
      * @param args (Optional) list of arguments to construct value within new node
      * @return Address of new node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::construct_back(ConstructorArgs&& ... args) requires reverseLinks {
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::construct_back(ConstructorArgs&& ... args) requires reverseLinks {
         //SG_LL_pushFrontBack(base::tail, previous, base::tail.previous, &(base::tail))
         return construct_beforeNode(static_cast<void *>(&(base::tail)), args...);
     }
@@ -155,8 +169,8 @@ export namespace SG_Allocator {
      * @param args (Optional) list of arguments to construct value within new node
      * @return Address of new node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::construct_front(ConstructorArgs&& ... args) requires forwardLinks {
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::construct_front(ConstructorArgs&& ... args) requires forwardLinks {
         //SG_LL_pushFrontBack(base::root, next, &(base::root), base::root.next)
         return construct_afterNode(static_cast<void *>(&(base::root)), args...);
     }
@@ -175,29 +189,32 @@ export namespace SG_Allocator {
      * @param index Index of node to get the value of (from front)
      * @return Mutable reference to node value
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    T & LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::get_fromFront(const index_t &index) requires forwardLinks { SG_LL_getFromFrontBack((base::root), next); }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    T & LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::get_fromFront(const index_t &index) requires forwardLinks { SG_LL_getFromFrontBack((base::root), next); }
 
     /**
      *
      * @param index Index of node to get the value of (from back)
      * @return Mutable reference to node value
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    T & LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::get_fromBack(const index_t &index) requires reverseLinks { SG_LL_getFromFrontBack(base::tail, previous); }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    T & LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::get_fromBack(const index_t &index) requires reverseLinks { SG_LL_getFromFrontBack(base::tail, previous); }
 
 
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::NodeFactory::deleteNode(Node* const& toDelete) {
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::NodeFactory::deleteNode(Node* const& toDelete) {
         if constexpr (recycleNodes) impl.shiftNode_front(toDelete);
+        else forceDeleteNode(toDelete);
+    }
+
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::NodeFactory::forceDeleteNode(Node* const& toDelete) {
+        if constexpr (manualConstruct) a->softDelete(toDelete);
         else a.softDelete(toDelete);
     }
 
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::NodeFactory::forceDeleteNode(Node* const& toDelete) { a.softDelete(toDelete); }
-
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)template<typename ... ConstructorArgs> typename LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::
-    Node * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::NodeFactory::provideNode(Node * const &a, Node * const &b, ConstructorArgs&& ... args) {
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)template<typename ... ConstructorArgs> typename LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::
+    Node * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::NodeFactory::provideNode(Node * const &a, Node * const &b, ConstructorArgs&& ... args) {
         if constexpr (recycleNodes) {
             if (impl.length() > 0) {
                 Node* out = static_cast<Node *>(impl.node_fromFront(0));
@@ -226,16 +243,16 @@ export namespace SG_Allocator {
      * @param index Index from front of list
      * @return Address of node at that index
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::node_fromFront(const index_t &index) requires forwardLinks{ SG_LL_nodeAt(base::root, next)}
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::node_fromFront(const index_t &index) requires forwardLinks{ SG_LL_nodeAt(base::root, next)}
 
     /**
      *
      * @param index Index from front of list
      * @return Address of node at that index
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::node_fromBack(const index_t &index) requires reverseLinks { SG_LL_nodeAt(base::tail, previous) }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::node_fromBack(const index_t &index) requires reverseLinks { SG_LL_nodeAt(base::tail, previous) }
 
 
     #define SG_LL_pushBeforeAfter(d1, d2, d3, d4, checkDirection) \
@@ -253,8 +270,8 @@ export namespace SG_Allocator {
      * @param args (Optional) list of arguments to construct value within new node
      * @return Address of new node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::construct_afterNode(void* const& parent, ConstructorArgs&& ... args) requires forwardLinks{
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::construct_afterNode(void* const& parent, ConstructorArgs&& ... args) requires forwardLinks{
         SG_LL_pushBeforeAfter(next, static_cast<Node *>(parent), child, previous, reverseLinks)
     }
 
@@ -264,8 +281,8 @@ export namespace SG_Allocator {
      * @param args (Optional) list of arguments to construct value within new node
      * @return Address of new node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::construct_beforeNode(void* const& parent, ConstructorArgs&& ... args) requires reverseLinks{
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::construct_beforeNode(void* const& parent, ConstructorArgs&& ... args) requires reverseLinks{
         SG_LL_pushBeforeAfter(previous, child, static_cast<Node *>(parent), next, forwardLinks)
     }
 
@@ -275,8 +292,8 @@ export namespace SG_Allocator {
      * @param args (Optional) list of arguments to construct value within new node
      * @return Address of new node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::construct_fromFront(const index_t &index, ConstructorArgs&& ... args) requires forwardLinks{
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::construct_fromFront(const index_t &index, ConstructorArgs&& ... args) requires forwardLinks{
         if constexpr (reverseLinks) { LOGGER_ASSERT_EXCEPT(index < _length); }
         LOGGER_ASSERT_EXCEPT(index > 0);
         return construct_afterNode(node_fromFront(index-1), args...);
@@ -288,8 +305,8 @@ export namespace SG_Allocator {
      * @param args (Optional) list of arguments to construct value within new node
      * @return Address of new node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
-    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::construct_fromBack(const index_t &index, ConstructorArgs&& ... args) requires reverseLinks{
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks) template<typename ... ConstructorArgs>
+    void * LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::construct_fromBack(const index_t &index, ConstructorArgs&& ... args) requires reverseLinks{
         if constexpr (forwardLinks) { LOGGER_ASSERT_EXCEPT(index < _length); }
         LOGGER_ASSERT_EXCEPT(index > 0);
         return construct_beforeNode(node_fromBack(index-1), args...);
@@ -299,8 +316,8 @@ export namespace SG_Allocator {
      * Remove specified node from list. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param node Address of node to remove. Treat as invalid after this call
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_node(void * const &node) requires (reverseLinks && forwardLinks) {
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_node(void * const &node) requires (reverseLinks && forwardLinks) {
         static_cast<Node *>(node)->previous->next = static_cast<Node *>(node)->next; \
         static_cast<Node *>(node)->next->previous = static_cast<Node *>(node)->previous; \
         factory.deleteNode(static_cast<Node *>(node)); \
@@ -319,15 +336,15 @@ export namespace SG_Allocator {
      * Remove node following the specified node. Undefined behaviour if called on last node. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param node Address of base node. Removes the following node
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_nodeAfter(void * const &node) requires forwardLinks { SG_LL_removeBeforeAfter(next); }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_nodeAfter(void * const &node) requires forwardLinks { SG_LL_removeBeforeAfter(next); }
 
     /**
      * Remove node in front of the specified node. Undefined behaviour if called on first node. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param node Address of base node. Removes the node in front
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_nodeBefore(void * const &node) requires reverseLinks { SG_LL_removeBeforeAfter(previous); }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_nodeBefore(void * const &node) requires reverseLinks { SG_LL_removeBeforeAfter(previous); }
 
 
     #define SG_LL_removeFromFrontFromBack(fun) \
@@ -339,22 +356,22 @@ export namespace SG_Allocator {
      * Remove specified node from list. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param index Index of node to remove.
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_fromFront(const int &index) requires forwardLinks { SG_LL_removeFromFrontFromBack(node_fromFront) }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_fromFront(const int &index) requires forwardLinks { SG_LL_removeFromFrontFromBack(node_fromFront) }
 
     /**
      * Remove specified node from list. Calls default destructor on its value - manually destruct first using get_atNode() and get if you want non-default destruction
      * @param index Index of node to remove.
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::remove_fromBack(const int &index) requires reverseLinks{ SG_LL_removeFromFrontFromBack(node_fromBack) }
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::remove_fromBack(const int &index) requires reverseLinks{ SG_LL_removeFromFrontFromBack(node_fromBack) }
 
 
     /**
      * Sets list to empty. Destructs allocated memory for PseudoArenas, but does not for other Arenas. For other Arenas, should generally only be called before clearing the arena or rolling back the sublifetime.
      */
-    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
-    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes>::clear() {
+    template<typename InsideArenaType, typename T, typename index_t, bool forwardLinks, bool reverseLinks, bool recycleNodes, bool manualConstruct> requires std::is_base_of_v<BaseArena, InsideArenaType> && (forwardLinks || reverseLinks)
+    void LinkedList<InsideArenaType, T, index_t, forwardLinks, reverseLinks, recycleNodes, manualConstruct>::clear() {
         if constexpr (std::is_base_of_v<PseudoArena, InsideArenaType>){
             if constexpr (reverseLinks) while (_length > 0) {SG_LL_removeFrontBack(base::tail, previous, next, forwardLinks, true, false);}
             else if constexpr (forwardLinks) while (_length > 0) { SG_LL_removeFrontBack(base::root, next, previous, reverseLinks, true, false); }
@@ -369,10 +386,6 @@ export namespace SG_Allocator {
 
 template<typename T> class baseNodeLL<T, true, true> {
 public:
-    baseNodeLL() {
-        root.next = &(tail);
-        tail.previous = &(root);
-    }
     struct Node{
         template<typename... ConstructorArgs> Node(Node* const& previous_, Node* const& next_, ConstructorArgs&& ... args):previous(previous_),next(next_),value(args...){}
         Node():previous(nullptr),next(nullptr),empty(0){}

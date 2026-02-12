@@ -4,6 +4,7 @@
 module;
 #include <type_traits>
 #include "Logger.h"
+#include <cstring>
 
 export module SG_Pathfind:BucketQueue;
 import :BasePriorityQueue;
@@ -25,7 +26,12 @@ export namespace SG_Pathfind::PriorityQueue {
         #ifndef NDEBUG
             ,maxP(maxPriority_-minPriority_)
         #endif
-        { for (priority_t i = 0; i < buckets.maxSize(); ++i) buckets.construct_back(arena); };
+        {
+            auto* start = buckets.alloc_back(buckets.maxSize());
+            std::memset(start, 0, buckets.maxSize()*sizeof(list_t)); //0-byte init all buckets -> Requires linkedlist be 0-byte initialisable
+            for (priority_t i = 1; i < buckets.maxSize(); ++i) buckets.get(i).init(arena);
+            //for (auto i = 0; i < buckets.maxSize(); i++) buckets.construct_back(arena);
+        };
 
         inline const priority_t& length(){ return length_; }
 
@@ -100,8 +106,13 @@ export namespace SG_Pathfind::PriorityQueue {
             return buckets.get(priority).construct_front(value);
         }
 
+        inline void softClear() {
+            for (priority_t i = 0; i < buckets.length(); ++i) while (buckets.get(i).length() > 0) buckets.get(i).remove_front();
+        }
+
     private:
-        SG_Allocator::ULL2<InsideArenaType, SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, true>> buckets; //TODO try to make work with just a singly-linked list?
+        typedef SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, false, true> list_t;
+        SG_Allocator::ULL2<InsideArenaType, list_t> buckets; //TODO try to make work with just a singly-linked list?
 
         priority_t minIndex;
         priority_t minPriority;

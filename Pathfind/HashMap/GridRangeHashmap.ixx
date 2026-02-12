@@ -22,6 +22,8 @@ const SG_Grid::coordinate_t& min(const SG_Grid::coordinate_t& a, const SG_Grid::
     return b;
 }
 
+
+//TODO use sparsegrid for partitions!!!
 export namespace SG_Pathfind {
     namespace HashMap {
         template<typename value_t = bool, bool useBitfield=false, uint8_t partitionContains=0, uint8_t partitionGet=0>
@@ -35,7 +37,7 @@ export namespace SG_Pathfind {
                 #ifndef NDEBUG
                 ,tr(SG_Grid::Point(min(within.width(), centrePoint.x() + distance),  min(within.height(), centrePoint.y() + distance)))
                 #endif
-            { clear(); }; //TODO improve this stuff by making an init function in RunTimeSizeGrid
+            { clear(); };
             
             template <typename pathfindGrid_t, typename insideArena_t> requires (std::is_base_of_v<SG_Grid::BaseGrid<typename pathfindGrid_t::value_type>, pathfindGrid_t> && std::is_same_v<value_t, bool>)
             inline GridRangeHashMap(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& distance) :
