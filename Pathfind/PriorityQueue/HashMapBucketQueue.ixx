@@ -64,6 +64,6 @@ export namespace SG_Pathfind::PriorityQueue {
         };
         struct empty{};
         BucketQueue<SG_Grid::Point, SG_Grid::coordinate_t, SG_Grid::coordinate_t, InsideArenaType> queue;
-        std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<nodeAddress, useBitfield>>  hashMap;
+        std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, useBitfield>>  hashMap;
     };
 }

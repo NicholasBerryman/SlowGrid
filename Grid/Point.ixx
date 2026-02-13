@@ -11,6 +11,7 @@ import Logger;
 
 SG_Grid::float_distance_t roundToNearestMultiple(const SG_Grid::float_distance_t number, const SG_Grid::float_distance_t multiple) { return std::round(number/multiple) * multiple; }
 
+//TODO differentiate between signed and unsigned coordinate_t's -> Grids use unsigned, Points use signed
 export namespace SG_Grid {
     /**
      * @brief Struct for coordinates

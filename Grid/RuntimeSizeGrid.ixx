@@ -26,6 +26,10 @@ export namespace SG_Grid {
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         RuntimeSizeGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){}
 
+        template<typename InsideArenaType>
+        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        RuntimeSizeGrid(InsideArenaType& arena, const bool& dummyA, const bool& dummyB, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){} //Constructor to conform to SparseGrid compatibility
+
         inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
 
