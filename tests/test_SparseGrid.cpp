@@ -2,7 +2,7 @@
 // Created by nickberryman on 10/12/25.
 //
 #include <cstdint>
-
+#include <iostream>
 #include "Logger.h"
 #define assert Logging::assert_except
 
@@ -46,10 +46,12 @@ void testRuntimeSized() {
     SG_Grid::SparseRuntimeGrid<decltype(arena), SG_Grid::RuntimeSizeGrid<T, false>> grid(arena, 2,1,3,3) ;
 
     grid.loadChunk({0,0});
+
     grid.set(SG_Grid::Point(1,1), 15);
     grid.set(SG_Grid::Point(0,1), 11);
     grid.set(SG_Grid::Point(2,0), 17);
     grid.loadChunk({1,0});
+    grid.set(SG_Grid::Point(4,1), 18);
     grid.set(SG_Grid::Point(5,2), 19);
     grid.set(SG_Grid::Point(3,0), 6);
 
@@ -60,6 +62,9 @@ void testRuntimeSized() {
     assert(grid.width() == 6);
     assert(grid.chunksHigh() == 1);
     assert(grid.chunksWide() == 2);
+
+    assert(grid.get(SG_Grid::Point(4,1)) == 18);
+    assert(grid.get(SG_Grid::Point(3,0)) == 6);
     assert(grid.get(SG_Grid::Point(5,2)) == 19);
     assert(grid.get(SG_Grid::Point(3,0)) == 6);
 

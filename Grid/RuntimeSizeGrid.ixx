@@ -3,6 +3,7 @@
 //
 module;
 #include "Logger.h"
+
 export module SG_Grid:RuntimeSizeGrid;
 import :Point;
 import :BaseGrid;
@@ -19,19 +20,24 @@ export namespace SG_Grid {
      */
     template <typename T, bool useBitfield = false>
     class RuntimeSizeGrid : private BaseGrid<T> {
-        static_assert(!useBitfield | std::is_same<T, bool>::value, "Bitfields can only be used with booleans");
+        static_assert(!useBitfield | std::is_same_v<T, bool>, "Bitfields can only be used with booleans");
     public:
         template<typename InsideArenaType>
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         RuntimeSizeGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){}
+        RuntimeSizeGrid() : impl(){}
+
+        template<typename InsideArenaType>
+        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        void lazyInit(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height){ impl.lazyInit(arena,width,height); }
 
         inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
 
         template <typename... ConstructorArgs> inline void construct(const Point& at, ConstructorArgs&&... args) requires (!useBitfield) { impl.construct(at, args...);}
         inline void set(const Point& at, const T& value) {impl.set(at, value);}
-        inline const coordinate_t& width(){return impl.width();}
-        inline const coordinate_t& height(){return impl.height();}
+        [[nodiscard]] inline const coordinate_t& width()const {return impl.width();}
+        [[nodiscard]] inline const coordinate_t& height() const {return impl.height();}
         inline void fill(const T& value){impl.fill(value);}
         inline void fill_memset(const char& value){impl.fill_memset(value);}
         typedef T value_type;

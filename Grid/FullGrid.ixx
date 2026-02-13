@@ -25,14 +25,23 @@ export namespace SG_Grid {
     public:
         FullGrid() requires (width_ > 0) : width_var(width_), height_var(height_) {}
 
-        template<typename InsideArenaType>
-        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         explicit FullGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) requires (width_ == 0) :
             width_var(width), height_var(height),
             impl(arena.template allocArray<internalT>(internalWidth(width) * height))
-        {
+        { LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);}
+
+        template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        explicit FullGrid() requires (width_ == 0) {}
+
+        template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        void lazyInit(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) requires (width_ == 0){
             LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);
+            width_var = width;
+            height_var = height;
+            impl = arena.template allocArray<internalT>(internalWidth(width) * height);
         }
+
         inline T get(const Point& at) requires (isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return (smartFind(at.x(),at.y()) >> (at.x()%8)) & 1;
@@ -67,7 +76,9 @@ export namespace SG_Grid {
             else std::memset(impl, toFill, height() * internalWidth(width()) * sizeof(internalT));
         }
 
-        template <typename... ConstructorArgs> inline void construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) { new (&get(at)) T(args...); }
+        template <typename... ConstructorArgs> inline void construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) {
+            new (&get(at)) T(args...);
+        }
 
         [[nodiscard]] const coordinate_t& width() const { return width_var; }
         [[nodiscard]] const coordinate_t& height() const { return height_var; }
@@ -80,13 +91,14 @@ export namespace SG_Grid {
     private:
         static consteval coordinate_t compileTimeInternalWidth() { if (isBitfield) return width_/8+(width_%8 > 0); return width_;}
         typedef std::conditional_t<isBitfield, char, T> internalT;
+        struct empty{};
 
         std::conditional_t<width_ != 0, std::array<std::array<internalT,height_>,compileTimeInternalWidth()>, internalT*> impl;
-        const coordinate_t width_var;
-        const coordinate_t height_var;
+        std::conditional_t<width_ == 0, coordinate_t, const coordinate_t> width_var;
+        std::conditional_t<width_ == 0, coordinate_t, const coordinate_t> height_var;
 
         inline internalT& find(const coordinate_t& x, const coordinate_t& y) requires (width_ > 0) { return impl[x][y]; }
-        inline internalT& find(const coordinate_t& x, const coordinate_t& y) requires (width_ == 0) { return impl[x*width()+y]; }
+        inline internalT& find(const coordinate_t& x, const coordinate_t& y) requires (width_ == 0) { return impl[x+y*internalWidth(width())]; } //TODO double check this calculation for bitfields??
 
         inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (!isBitfield) { return find(x,y); }
         inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (isBitfield) { return find(x/8,y); }

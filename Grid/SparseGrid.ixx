@@ -4,6 +4,8 @@
 module;
 #include "Logger.h"
 #include <type_traits>
+#include <iostream>
+
 export module SG_Grid:SparseGrid;
 import :Point;
 import :BaseGrid;
@@ -12,7 +14,7 @@ import SG_GridConfigs;
 import SG_Allocator;
 import Logger;
 
-
+//TODO add a 'fill_memset' method per chunk
 export namespace SG_Grid {
     /**
      * @brief Grid to sparsely store arbitrary type data.
@@ -75,11 +77,9 @@ export namespace SG_Grid {
     public:
         SparseRuntimeGrid(InsideArenaType& arena, const coordinate_t& ChunksWide, const coordinate_t& ChunksHigh, const coordinate_t& chunkWidth, const coordinate_t& chunkHeight) :
         arena(arena),
-        impl(arena, chunkWidth, chunkHeight),
-        chunksWide_(ChunksWide),
-        chunksHigh_(ChunksHigh),
+        impl(arena, ChunksWide, ChunksHigh),
         chunkWidth(chunkWidth),
-        chunkHeight(chunkHeight){}
+        chunkHeight(chunkHeight) {}
         inline Chunk_T::value_type& get(const Point& at) requires (!Chunk_T::isBitfieldGrid) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width());
             Chunk_T& chunk = impl.get(Point(at.x()/chunkWidth,at.y()/chunkHeight));
@@ -98,26 +98,24 @@ export namespace SG_Grid {
             Point inChunk = Point(at.x()%chunkWidth, at.y()%chunkHeight);
             chunk.set(inChunk, value);
         }
-        [[nodiscard]] coordinate_t width() const{ return chunkWidth * chunksWide(); }
-        [[nodiscard]] coordinate_t height() const { return chunkHeight * chunksHigh(); }
+        [[nodiscard]] inline coordinate_t width() const{ return chunkWidth * chunksWide(); }
+        [[nodiscard]] inline coordinate_t height() const { return chunkHeight * chunksHigh(); }
         typedef Chunk_T::value_type value_type;
 
-        [[nodiscard]] const coordinate_t& chunksWide() const { return chunksWide_;}
-        [[nodiscard]] const coordinate_t& chunksHigh() const { return chunksHigh_;}
+        [[nodiscard]] inline const coordinate_t& chunksWide() const { return impl.width();}
+        [[nodiscard]] inline const coordinate_t& chunksHigh() const { return impl.height(); }
 
         inline void loadChunk(const Point& at) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width());
             impl.construct(at, arena, chunkWidth, chunkHeight);
         }
-        inline Chunk_T* getChunk(const Point& at) {
+        inline Chunk_T& getChunk(const Point& at) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width());
             return impl.get(at);
         }
     private:
         InsideArenaType& arena;
         RuntimeSizeGrid<Chunk_T> impl;
-        const coordinate_t chunksWide_;
-        const coordinate_t chunksHigh_;
         const coordinate_t chunkWidth;
         const coordinate_t chunkHeight;
     };
