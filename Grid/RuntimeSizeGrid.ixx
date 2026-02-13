@@ -18,23 +18,18 @@ export namespace SG_Grid {
      * @tparam T Type to store in squares
      * @tparam useBitfield True if a compressed representation for bools should be used (slower, but 8x smaller in memory - requires bool T)
      */
-    template <typename T, bool useBitfield = false>
+    template <typename T, bool useBitfield = false, bool is2Power = false>
     class RuntimeSizeGrid : private BaseGrid<T> {
         static_assert(!useBitfield | std::is_same_v<T, bool>, "Bitfields can only be used with booleans");
     public:
         template<typename InsideArenaType>
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         RuntimeSizeGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){}
-        RuntimeSizeGrid() : impl(){}
-
-        template<typename InsideArenaType>
-        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        void lazyInit(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height){ impl.lazyInit(arena,width,height); }
 
         inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
 
-        template <typename... ConstructorArgs> inline void construct(const Point& at, ConstructorArgs&&... args) requires (!useBitfield) { impl.construct(at, args...);}
+        template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!useBitfield) { return impl.construct(at, args...);}
         inline void set(const Point& at, const T& value) {impl.set(at, value);}
         [[nodiscard]] inline const coordinate_t& width()const {return impl.width();}
         [[nodiscard]] inline const coordinate_t& height() const {return impl.height();}
@@ -45,6 +40,6 @@ export namespace SG_Grid {
         constexpr static bool isBitfieldGrid = useBitfield;
 
     private:
-        FullGrid<T,0,0, useBitfield> impl;
+        FullGrid<T,0,0, useBitfield, is2Power> impl;
     };
 }
