@@ -67,12 +67,15 @@ export namespace SG_Grid {
             else std::memset(impl, toFill, height() * internalWidth(width()) * sizeof(internalT));
         }
 
+        template <typename... ConstructorArgs> inline void construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) { new (&get(at)) T(args...); }
+
         [[nodiscard]] const coordinate_t& width() const { return width_var; }
         [[nodiscard]] const coordinate_t& height() const { return height_var; }
 
         static constexpr coordinate_t compileTimeWidth(){ return width_;}
         static constexpr coordinate_t compileTimeHeight(){ return height_;}
         typedef T value_type;
+        constexpr static bool isBitfieldGrid = isBitfield;
 
     private:
         static consteval coordinate_t compileTimeInternalWidth() { if (isBitfield) return width_/8+(width_%8 > 0); return width_;}

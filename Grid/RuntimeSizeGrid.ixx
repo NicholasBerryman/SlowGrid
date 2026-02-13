@@ -28,12 +28,15 @@ export namespace SG_Grid {
         inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
 
+        template <typename... ConstructorArgs> inline void construct(const Point& at, ConstructorArgs&&... args) requires (!useBitfield) { impl.construct(at, args...);}
         inline void set(const Point& at, const T& value) {impl.set(at, value);}
         inline const coordinate_t& width(){return impl.width();}
         inline const coordinate_t& height(){return impl.height();}
         inline void fill(const T& value){impl.fill(value);}
         inline void fill_memset(const char& value){impl.fill_memset(value);}
         typedef T value_type;
+
+        constexpr static bool isBitfieldGrid = useBitfield;
 
     private:
         FullGrid<T,0,0, useBitfield> impl;
