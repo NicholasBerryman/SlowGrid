@@ -15,8 +15,7 @@ export namespace SG_Pathfind {
         public:
 
             inline priority_t encodePriority(const priority_t& priority) {Logging::assert_except(0); return 0;}
-            inline void insert(const T& value, const priority_t& priority ) {Logging::assert_except(0); }
-            inline bool contains(const T& value ) {Logging::assert_except(0); return 0;}
+            inline void insert(const T& value, const priority_t& priority ) {Logging::assert_except(0); } //Should automatically call decreaseKey if it needs to, and also not insert if priority is higher than existing
 
             inline priority_t findMin() {Logging::assert_except(0); return 0;}
             inline T extractMin() {Logging::assert_except(0); return nullptr;}

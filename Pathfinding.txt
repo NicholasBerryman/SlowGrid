@@ -181,7 +181,12 @@ Jump Point Search:
 			Could potentially save some memory in most cases by using unrolled linked lists in the queue
 	Can still make Dijkstra matrices
 	Tends to find straight paths -> look nicer
-	
+	Default rules work for queens case, but can also work for rooks case by just orthogonalising the final path
+
+JPSW:
+	Weighted Grids
+	Look at Monash Paper from 2023 that introduces it
+
 JPS+:
 	Slowly changing grid
 	Applied on top of JPS
@@ -215,8 +220,10 @@ Rectangular Symmetry Reduction:
 	TODO
 
 HAA*:
+	(Heirarchical Annotated A*)
 	Unchanging weighted or unweighted grids
 	Larger unit sizes
+		-> (Or we could just use regular A* [not JPS] with collision checks on each node -> slower but probably fine if most units aren't large)
 	d -> max distance
 	TODO
 
@@ -241,7 +248,7 @@ Relaxing search:
 		Goal Bounding -> no goalbounding
 		HAA* -> A* -> done
 	
-	Near-optimal and faster:
+	Near-optimal and faster -> Path splicing:
 		Try fast method e.g. JPS+
 		Check for violation in range e.g. goblin blocking path in 5 steps
 		Perform JPS/A* with small max distance e.g. 10, with goal being just to get back on path

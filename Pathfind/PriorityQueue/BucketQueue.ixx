@@ -12,11 +12,15 @@ import Logger;
 import SG_Grid;
 import SG_Allocator;
 
-//TODO add template option for FIFO or LIFO within buckets
 //TODO double-check that A* with an admissible heuristic still satisfies the 'monotonic increasing' assumption that this uses here
+//TODO Maybe completely refactor BucketQueue to use only a single LinkedList with a ULL of void* for bucket locations, instead of the ULL of LLs ????
+    // Use only one LinkedList -> Reduces initialisation burden and wasted memory, especially for non-uniform-cost grids
+    // Add a ULL of node* to track bucket starts -> doesn't need to be 0-initialised if we also track bucket size separately
+    // Add a ULL of bucketSize_t values to track bucket size -> Must 0-initialise
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true>
+    template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true, bool fifoOnTie = true>
     class BucketQueue : private BasePriorityQueue<T, priority_t>{
+        static_assert(std::is_integral_v<priority_t>, "Priority must be an integral type.");
     public:
         BucketQueue(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) :
             buckets(arena, maxPriority_-minPriority_+1)
@@ -27,8 +31,9 @@ export namespace SG_Pathfind::PriorityQueue {
             ,maxP(maxPriority_-minPriority_)
         #endif
         {
+            LOGGER_ASSERT_EXCEPT(maxPriority_ >= minPriority_);
             auto* start = buckets.alloc_back(buckets.maxSize());
-            std::memset(start, 0, buckets.maxSize()*sizeof(list_t)); //0-byte init all buckets -> Requires linkedlist be 0-byte initialisable
+            std::memset(start, 0, buckets.maxSize()*sizeof(list_t)); //0-byte-init all buckets -> Requires linkedlist be 0-byte initialisable
             for (priority_t i = 1; i < buckets.maxSize(); ++i) buckets.get(i).init(arena);
             //for (auto i = 0; i < buckets.maxSize(); i++) buckets.construct_back(arena);
         };
@@ -51,7 +56,8 @@ export namespace SG_Pathfind::PriorityQueue {
             }
             if (node != nullptr) {
                 if (priority >= bucket) return;
-                decreaseKey(node, bucket, priority);
+                if constexpr (fullDecreaseKey) decreaseKey(node, bucket, priority);
+                else forceInsert(value, priority);
                 return;
             }
             forceInsert(value, priority);
@@ -71,7 +77,7 @@ export namespace SG_Pathfind::PriorityQueue {
         inline T extractMin() {
             LOGGER_ASSERT_EXCEPT(length_ > 0)
             auto& out = buckets.get(findMin()).get_fromFront(0);
-            buckets.get(findMin()).remove_front();
+            buckets.get(minIndex).remove_front();
             --length_;
             return out;
         }
@@ -103,7 +109,8 @@ export namespace SG_Pathfind::PriorityQueue {
             LOGGER_ASSERT_EXCEPT(priority <= maxP)
             LOGGER_ASSERT_EXCEPT(priority >= minIndex)
             ++length_;
-            return buckets.get(priority).construct_front(value);
+            if constexpr (fifoOnTie) return buckets.get(priority).construct_front(value);
+            else return buckets.get(priority).construct_back(value);
         }
 
         inline void softClear() {
@@ -111,8 +118,8 @@ export namespace SG_Pathfind::PriorityQueue {
         }
 
     private:
-        typedef SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, false, true> list_t;
-        SG_Allocator::ULL2<InsideArenaType, list_t> buckets; //TODO try to make work with just a singly-linked list?
+        typedef SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, true, true> list_t;
+        SG_Allocator::ULL2<InsideArenaType, list_t> buckets;
 
         priority_t minIndex;
         priority_t minPriority;

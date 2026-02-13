@@ -18,7 +18,7 @@ export namespace SG_Grid {
      * @tparam width_ width of grid in squares - try to keep width and height powers of 2 for performance.
      * @tparam height_ height of grid in squares - try to keep width and height powers of 2 for performance.
      */
-    template<typename T, coordinate_t width_, coordinate_t height_, bool isBitfield = false, bool is2Power = false>
+    template<typename T, u_coordinate_t width_, u_coordinate_t height_, bool isBitfield = false, bool is2Power = false>
     class FullGrid : private BaseGrid<T> {
         static_assert((width_ > 0 && height_ > 0) || (width_ == 0 && height_ == 0), "Width and height must both be positive or zero");
         static_assert(!isBitfield || std::is_same_v<bool, T>, "Bitfield only supported for bools");
@@ -28,16 +28,16 @@ export namespace SG_Grid {
             height_var(height_) {}
 
         template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        explicit FullGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) requires (width_ == 0 && is2Power) :
+        explicit FullGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && is2Power) :
             impl(arena.template allocArray<internalT>(internalWidth(width) * height)),
             width_var(width),
             height_var(height),
-            widthMult(std::bit_width(static_cast<std::make_unsigned_t<const coordinate_t>>(width_var))-1),
-            heightMult(std::bit_width(static_cast<std::make_unsigned_t<const coordinate_t>>(height_var))-1)
+            widthMult(std::bit_width((width_var))-1),
+            heightMult(std::bit_width((height_var))-1)
         { LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);}
 
         template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        explicit FullGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) requires (width_ == 0 && !is2Power) :
+        explicit FullGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && !is2Power) :
             impl(arena.template allocArray<internalT>(internalWidth(width) * height)),
             width_var(width),
             height_var(height)
@@ -78,37 +78,38 @@ export namespace SG_Grid {
         }
 
         template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) {
-            return *(new (&get(at)) T(args...));
+            return *new (&get(at)) T(args...);
         }
 
-        [[nodiscard]] const coordinate_t& width() const { return width_var; }
-        [[nodiscard]] const coordinate_t& height() const { return height_var; }
+        [[nodiscard]] const u_coordinate_t& width() const { return width_var; }
+        [[nodiscard]] const u_coordinate_t& height() const { return height_var; }
 
-        static constexpr coordinate_t compileTimeWidth(){ return width_;}
-        static constexpr coordinate_t compileTimeHeight(){ return height_;}
+        static constexpr u_coordinate_t compileTimeWidth(){ return width_;}
+        static constexpr u_coordinate_t compileTimeHeight(){ return height_;}
         typedef T value_type;
         constexpr static bool isBitfieldGrid = isBitfield;
 
     private:
-        static consteval coordinate_t compileTimeInternalWidth() { if (isBitfield) return width_/8+(width_%8 > 0); return width_;}
+        static consteval u_coordinate_t compileTimeInternalWidth() { if (isBitfield) return width_/8+(width_%8 > 0); return width_;}
         typedef std::conditional_t<isBitfield, char, T> internalT;
         struct empty{};
 
         std::conditional_t<width_ != 0, std::array<std::array<internalT,height_>,compileTimeInternalWidth()>, internalT*> impl;
-        const coordinate_t width_var;
-        const coordinate_t height_var;
-        [[no_unique_address]] std::conditional_t<is2Power, std::make_unsigned_t<const coordinate_t>, empty> widthMult;
-        [[no_unique_address]] std::conditional_t<is2Power, std::make_unsigned_t<const coordinate_t>, empty> heightMult;
+        const u_coordinate_t width_var;
+        const u_coordinate_t height_var;
+        [[no_unique_address]] std::conditional_t<is2Power, const u_coordinate_t, empty> widthMult;
+        [[no_unique_address]] std::conditional_t<is2Power, const u_coordinate_t, empty> heightMult;
 
-        inline internalT& find(const coordinate_t& x, const coordinate_t& y) requires (width_ > 0) { return impl[x][y]; }
-        inline internalT& find(const coordinate_t& x, const coordinate_t& y) requires (width_ == 0) {
+        inline internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) requires (width_ > 0) { return impl[x][y]; }
+        inline internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) requires (width_ == 0) {
             if constexpr (!is2Power) return impl[x+y*internalWidth(width())];
-            else                     return impl[x+(y>>heightMult)];
-        } //TODO double check this calculation for bitfields??
+            else                     return impl[x+(y<<widthMult)];
+        }
 
-        inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (!isBitfield) { return find(x,y); }
-        inline internalT& smartFind(const coordinate_t& x, const coordinate_t& y) requires (isBitfield) { return find(x/8,y); }
+        inline internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) requires (!isBitfield) { return find(x,y); }
+        inline internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) requires (isBitfield) { return find(x/8,y); }
 
-        [[nodiscard]] static inline coordinate_t internalWidth(const coordinate_t& x) { if constexpr (isBitfield) return x/8+(x%8 > 0); return x;} //TODO maybe try speeding this up somehow
+        [[nodiscard]] static inline u_coordinate_t internalWidth(const u_coordinate_t& x) requires isBitfield { return x/8+(x%8 > 0); }
+        [[nodiscard]] static inline const u_coordinate_t& internalWidth(const u_coordinate_t& x) requires (!isBitfield) { return x; }
     };
 }

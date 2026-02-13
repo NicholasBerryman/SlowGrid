@@ -14,38 +14,34 @@ import :GridRangeHashMap;
 import :BucketQueue;
 
 
-//TODO add template option for FIFO or LIFO within buckets
-//TODO Maybe completely refactor BucketQueue to use only a single LinkedList with a ULL of void* for bucket locations, instead of the ULL of LLs
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
     class HashMapBucketQueue {
     public:
         HashMapBucketQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
             queue(arena, maxCost, minCost), 
             hashMap(arena, within, centrePoint, maxDistanceChebyshev) {}
     
-    inline const SG_Grid::Point& valueAt(const SG_Grid::coordinate_t& priority, const SG_Grid::coordinate_t& indexInBucket = 0) { return queue.valueAt(queue.encodePriority(priority), indexInBucket); }
-    inline SG_Grid::coordinate_t findMin() { return queue.decodePriority(queue.findMin()); }
-    inline const SG_Grid::coordinate_t& length(){ return queue.length(); }
-    inline SG_Grid::Point extractMin() requires (noHashSet || uniformCost) { return queue.extractMin(); }
-    inline SG_Grid::Point extractMin() requires (!noHashSet && !uniformCost) {
+    inline const SG_Grid::Point& valueAt(const SG_Grid::u_coordinate_t& priority, const SG_Grid::u_coordinate_t& indexInBucket = 0) { return queue.valueAt(queue.encodePriority(priority), indexInBucket); }
+    inline SG_Grid::u_coordinate_t findMin() { return queue.decodePriority(queue.findMin()); }
+    inline const SG_Grid::u_coordinate_t& length() {  return queue.length(); }
+
+    inline SG_Grid::Point extractMin() {
         SG_Grid::Point out = queue.extractMin();
-        hashMap.remove(out);
+        if constexpr (!noHashSet && !uniformCost && fullDecreaseKey) hashMap.remove(out); // Prevents decreaseKey running on recycled/invalid nodeAddresses
         return out;
     }
 
-    inline void insert(const SG_Grid::Point& tile, const SG_Grid::coordinate_t& priority_ ) {
+    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_ ) {
         auto priority = queue.encodePriority(priority_);
         if constexpr (noHashSet) queue.insert(tile, priority);
         else {
-            nodeAddress& toCheck = hashMap.get(tile);
             if (!hashMap.contains(tile)) {
-                hashMap.insert(tile);
-                toCheck.node = queue.forceInsert(tile, priority);
-                toCheck.priority = priority;
+                hashMap.insert(tile, {queue.forceInsert(tile, priority), priority});
                 return;
-             }
+            }
             if constexpr (uniformCost) return;
+            nodeAddress& toCheck = hashMap.get(tile);
             if (toCheck.priority <= priority) return;
             toCheck.node = queue.decreaseKeyAndReturn(toCheck.node, toCheck.priority, priority);
             toCheck.priority = priority;
@@ -60,10 +56,10 @@ export namespace SG_Pathfind::PriorityQueue {
     private:
         struct nodeAddress {
             void* node;
-            SG_Grid::coordinate_t priority;
+            SG_Grid::u_coordinate_t priority;
         };
         struct empty{};
-        BucketQueue<SG_Grid::Point, SG_Grid::coordinate_t, SG_Grid::coordinate_t, InsideArenaType> queue;
-        std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<nodeAddress, useBitfield>>  hashMap;
+        BucketQueue<SG_Grid::Point, SG_Grid::u_coordinate_t, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO make bucketSize_t the same as priority_t in the BucketQueue implementation -> makes it work nicer with the binary heap version too
+        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, useBitfield>>  hashMap;
     };
 }

@@ -32,18 +32,19 @@ export namespace SG_Allocator {
         inline void expand(const arenaSize_t& newSize){impl.expand(newSize);}
         
         inline T& get(const arenaSize_t& index){return *impl.template get<T>(index); }
+        inline const T& get(const arenaSize_t& index) const {return *impl.template get<T>(index); } //Const override
         inline T& getFromBack(const arenaSize_t& indexFromBack){return *impl.template getFromBack<T>(indexFromBack); }
         inline void set(const arenaSize_t& index, const T& value){ (*impl.template get<T>(index)) = value; }
         inline void fill(const T& value){ for (arenaSize_t i = 0; i < impl.maxSize(); i++) (*impl.template get<T>(i)) = value; }
 
         template<typename... ConstructorArgs> inline T& construct_back(ConstructorArgs&&... args) { return * (new (impl.template alloc<T>()) T(args...)); }
-        template<typename... ConstructorArgs> inline T* alloc_back(const arenaSize_t& count) { return impl.template allocArray<T>(count); }
+        inline T* alloc_back(const arenaSize_t& count) { return impl.template allocArray<T>(count); }
         inline void push_back(const T& value){ (*impl.template alloc<T>()) = value; }
-        inline T pop_back(){ const T& out = (*impl.get_fromBack(0)); impl.dealloc(1); return out;}
+        inline T pop_back() { const T& out = *(impl.template getFromBack<T>(0)); impl.dealloc(1); return out; }
         inline const T& back(){ return (*impl.template getFromBack<T>(0)); }
 
         [[nodiscard]] inline arenaSize_t maxSize() const {return impl.maxSize();}
-        [[nodiscard]] inline arenaSize_t length() const {return impl.length();}
+        [[nodiscard]] inline const arenaSize_t& length() const {return impl.length();}
     private:
         ULL<InsideArenaType, T> impl;
     };

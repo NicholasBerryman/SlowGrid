@@ -1,0 +1,23 @@
+
+
+
+Good Enough Solution -> Just use OldPosition/NewPosision split and accept the edge cases:
+	Implementation (FLECS-style):
+		Initialisation:
+			Give each entity a 'movement priority'
+			Split 'Position' component into OldPosition and Position
+		Multithreaded/deferred:
+			1. Perform initial pathfinding for each mobile entity to immobile & mobile targets. (And carry over pathfinds from last tick where target didn't move or is immobile)
+				1.1. Check paths to find fixed dynamic obstacle collisions and attempt path-splicing to manage
+			2. Execute movement
+				2.1 Set OldPosition to Position
+				2.2 Execute movement -> Update 'Position'
+			-- Sync Point --
+			3. Calculate collisions
+			4. Execute knockback and enqueue other collision effects -> Update 'Position'
+			-- Sync Point --
+			5. Calculate distance to target (or other relevant entities for 'Aura'-style effects)
+				-> Based on current either/both of entity's 'Position' and either/both of target entity's 'OldPosition' and 'Position'
+			6. Execute queued collision effects
+			-- Sync Point --
+			7. Execute abilities

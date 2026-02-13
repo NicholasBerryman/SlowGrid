@@ -24,20 +24,25 @@ export namespace SG_Grid {
     public:
         template<typename InsideArenaType>
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        RuntimeSizeGrid(InsideArenaType& arena, const coordinate_t& width, const coordinate_t& height) : impl(arena,width,height){}
+        RuntimeSizeGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){}
+
+        template<typename InsideArenaType>
+        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
+        RuntimeSizeGrid(InsideArenaType& arena, const bool& dummyA, const bool& dummyB, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){} //Constructor to conform to SparseGrid compatibility
 
         inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
 
         template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!useBitfield) { return impl.construct(at, args...);}
         inline void set(const Point& at, const T& value) {impl.set(at, value);}
-        [[nodiscard]] inline const coordinate_t& width()const {return impl.width();}
-        [[nodiscard]] inline const coordinate_t& height() const {return impl.height();}
+        [[nodiscard]] inline const u_coordinate_t& width()const {return impl.width();}
+        [[nodiscard]] inline const u_coordinate_t& height() const {return impl.height();}
         inline void fill(const T& value){impl.fill(value);}
         inline void fill_memset(const char& value){impl.fill_memset(value);}
         typedef T value_type;
 
         constexpr static bool isBitfieldGrid = useBitfield;
+        constexpr static bool PowerOf2 = is2Power;
 
     private:
         FullGrid<T,0,0, useBitfield, is2Power> impl;
