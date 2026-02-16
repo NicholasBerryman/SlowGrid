@@ -16,6 +16,7 @@ import :BucketQueue;
 
 //TODO add template option for FIFO or LIFO within buckets
 //TODO Maybe completely refactor BucketQueue to use only a single LinkedList with a ULL of void* for bucket locations, instead of the ULL of LLs
+//TODO when fullDecreaseKey is false, maybe check on extractMin if the existing distance is lower then skip
 export namespace SG_Pathfind::PriorityQueue {
     template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
     class HashMapBucketQueue {

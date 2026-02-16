@@ -13,6 +13,7 @@ import :PseudoArena;
 import SG_AllocatorConfigs;
 import Logger;
 
+//TODO add a zeroInitialise template option on 'set' to memset if a new node is created (also in base ULL)
 export namespace SG_Allocator {
     /**
      * @brief Homogenous unrolled doubly-linked list, with arena allocation support. Guarantees tightly packed allocations (unlike heterogeneous version)

@@ -14,6 +14,7 @@ import SG_Allocator;
 
 //TODO add template option for FIFO or LIFO within buckets
 //TODO double-check that A* with an admissible heuristic still satisfies the 'monotonic increasing' assumption that this uses here
+//TODO add requires on priority_t being integer
 export namespace SG_Pathfind::PriorityQueue {
     template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true>
     class BucketQueue : private BasePriorityQueue<T, priority_t>{
@@ -28,7 +29,7 @@ export namespace SG_Pathfind::PriorityQueue {
         #endif
         {
             auto* start = buckets.alloc_back(buckets.maxSize());
-            std::memset(start, 0, buckets.maxSize()*sizeof(list_t)); //0-byte init all buckets -> Requires linkedlist be 0-byte initialisable
+            std::memset(start, 0, buckets.maxSize()*sizeof(list_t)); //0-byte-init all buckets -> Requires linkedlist be 0-byte initialisable
             for (priority_t i = 1; i < buckets.maxSize(); ++i) buckets.get(i).init(arena);
             //for (auto i = 0; i < buckets.maxSize(); i++) buckets.construct_back(arena);
         };
@@ -111,7 +112,7 @@ export namespace SG_Pathfind::PriorityQueue {
         }
 
     private:
-        typedef SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, false, true> list_t;
+        typedef SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, true, true> list_t;
         SG_Allocator::ULL2<InsideArenaType, list_t> buckets; //TODO try to make work with just a singly-linked list?
 
         priority_t minIndex;
