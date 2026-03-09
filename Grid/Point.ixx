@@ -18,6 +18,7 @@ export namespace SG_Grid {
      */
     class Point {
     public:
+        inline Point(){} //Default Constructor should not initialise -> Mainly to help make arrays of points
         inline Point(const coordinate_t& x, const coordinate_t& y) : _x(x), _y(y) {}
         [[nodiscard]] inline const coordinate_t& x() const {return _x;}
         [[nodiscard]] inline const coordinate_t& y() const {return _y;}
@@ -44,6 +45,8 @@ export namespace SG_Grid {
         inline Point operator<(const Point& rhs) const {return Point(_x < rhs._x, _y < rhs._y);}
 
         inline Point& abs() {_x = std::abs(_x); _y = std::abs(_y); return *this;}
+        
+        template <typename Grid_T> bool on(const Grid_T& onGrid) const { return _x >= 0 && _x < onGrid.width() && _y >= 0 && _y < onGrid.height(); }
 
     private:
         coordinate_t _x;
@@ -51,9 +54,9 @@ export namespace SG_Grid {
     };
 
     namespace Distance {
-        coordinate_t Chebyshev(const Point& a, const Point& b) { return std::max(std::abs(a.x() - b.x()), std::abs(a.y() - b.y())); }
-        coordinate_t Manhattan(const Point& a, const Point& b) { return std::abs(a.x() - b.x()) + std::abs(a.y() - b.y()); }
-        coordinate_t ComparativeEuclidean(const Point& a, const Point& b) { return std::pow(std::abs(a.x() - b.x()),2) + std::pow(std::abs(a.y() - b.y()),2); }
+        u_coordinate_t Chebyshev(const Point& a, const Point& b) { return std::max(std::abs(a.x() - b.x()), std::abs(a.y() - b.y())); }
+        u_coordinate_t Manhattan(const Point& a, const Point& b) { return std::abs(a.x() - b.x()) + std::abs(a.y() - b.y()); }
+        u_coordinate_t ComparativeEuclidean(const Point& a, const Point& b) { return std::pow(std::abs(a.x() - b.x()),2) + std::pow(std::abs(a.y() - b.y()),2); }
         float_distance_t AbsoluteEuclidean(const Point& a, const Point& b) {return std::sqrt(std::pow(std::abs(a.x() - b.x()),2) + std::pow(std::abs(a.y() - b.y()),2));}
     }
 

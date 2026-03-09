@@ -5,7 +5,7 @@ module;
 #include "Logger.h"
 #include <type_traits>
 #include <iostream>
-#include <ranges>
+#include <utility>
 
 export module SG_Grid:SparseGrid;
 import :Point;
@@ -28,18 +28,18 @@ export namespace SG_Grid {
         static_assert(width_ > 0 && height_ > 0 && Chunk_T::compileTimeWidth() > 0, "Width and height must be positive and known at compile time (including for inner chunks)");
     public:
         SparseGrid(){}
-        inline Chunk_T::value_type& get(const Point& at) requires (!Chunk_T::isBitfieldGrid) {
-            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
-            Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()];
-            Point inChunk = Point(at.x()%Chunk_T::compileTimeWidth(), at.y()%Chunk_T::compileTimeHeight());
+
+        #define SG_SPARSE_GRID_GET \
+            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_); \
+            Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()]; \
+            Point inChunk = Point(at.x()%Chunk_T::compileTimeWidth(), at.y()%Chunk_T::compileTimeHeight()); \
             return chunk.get(inChunk);
-        }
-        inline Chunk_T::value_type get(const Point& at) requires (Chunk_T::isBitfieldGrid) {
-            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
-            Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()];
-            Point inChunk = Point(at.x()%Chunk_T::compileTimeWidth(), at.y()%Chunk_T::compileTimeHeight());
-            return chunk.get(inChunk);
-        }
+
+        inline const Chunk_T::value_type& get(const Point& at) const requires (!Chunk_T::isBitfieldGrid) { SG_SPARSE_GRID_GET }
+        inline Chunk_T::value_type get(const Point& at) const requires (Chunk_T::isBitfieldGrid) { SG_SPARSE_GRID_GET }
+        inline Chunk_T::value_type& get(const Point& at) requires (!Chunk_T::isBitfieldGrid) {return const_cast<Chunk_T::value_type&>(std::as_const(*this).get(at));}
+        #undef SG_SPARSE_GRID_GET
+
         inline void set(const Point& at, const Chunk_T::value_type& value) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             Chunk_T& chunk = *impl[at.x()/Chunk_T::compileTimeWidth()][at.y()/Chunk_T::compileTimeHeight()];
@@ -58,10 +58,11 @@ export namespace SG_Grid {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             impl[at.x()][at.y()] = chunk;
         }
-        inline Chunk_T* getChunk(const Point& at) {
+        inline const Chunk_T* getChunk(const Point& at) const {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width_ && at.y() < height_);
             return impl[at.x()][at.y()];
         }
+        inline Chunk_T* getChunk(const Point& at) {return const_cast<Chunk_T::value_type&>(std::as_const(*this).get(at));}
     private:
         Chunk_T* impl[chunksWide()][chunksHigh()];
     };
@@ -87,43 +88,29 @@ export namespace SG_Grid {
             if constexpr (is2Power) LOGGER_ASSERT_EXCEPT((chunkWidth && !(chunkWidth & (chunkWidth - 1))) && (chunkHeight && !(chunkHeight & (chunkHeight - 1))));
         }
 
-    #define chunkAt_base \
-        Chunk_T& chunk = impl.get(Point(at.x()/chunkWidth,at.y()/chunkHeight)); \
-        Point inChunk = Point(at.x()%chunkWidth, at.y()%chunkHeight);
-    #define chunkAt_shift \
-        Chunk_T& chunk = impl.get(Point(at.x() >> widthDivisor,at.y() >> heightDivisor)); \
-        Point inChunk = Point(static_cast<std::make_unsigned_t<u_coordinate_t>>(at.x()) & (chunkWidth-1), static_cast<std::make_unsigned_t<u_coordinate_t>>(at.y()) & (chunkHeight-1));
+        #define SG_GRID_chunkAt_base \
+            auto& chunk = impl.get(Point(at.x()/chunkWidth,at.y()/chunkHeight)); \
+            Point inChunk = Point(at.x()%chunkWidth, at.y()%chunkHeight);
+        #define SG_GRID_chunkAt_shift \
+            auto& chunk = impl.get(Point(at.x() >> widthDivisor,at.y() >> heightDivisor)); \
+            Point inChunk = Point(static_cast<std::make_unsigned_t<u_coordinate_t>>(at.x()) & (chunkWidth-1), static_cast<std::make_unsigned_t<u_coordinate_t>>(at.y()) & (chunkHeight-1));
 
-        inline Chunk_T::value_type& get(const Point& at) requires (!Chunk_T::isBitfieldGrid) {
-            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width());
-            if constexpr (!is2Power) {
-                chunkAt_base;
-                return chunk.get(inChunk);
-            } else {
-                chunkAt_shift;
-                return chunk.get(inChunk);
+        #define SG_SPARSE_GRID_SET_GET(act) \
+            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width()); \
+            if constexpr (!is2Power) { \
+                SG_GRID_chunkAt_base; \
+                return act; \
+            } else { \
+                SG_GRID_chunkAt_base; \
+                return act; \
             }
-        }
-        inline Chunk_T::value_type get(const Point& at) requires (Chunk_T::isBitfieldGrid) {
-            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width());
-            if constexpr (!is2Power) {
-                chunkAt_base;
-                return chunk.get(inChunk);
-            } else {
-                chunkAt_shift;
-                return chunk.get(inChunk);
-            }
-        }
-        inline void set(const Point& at, const Chunk_T::value_type& value) {
-            LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < width());
-            if constexpr (!is2Power) {
-                chunkAt_base;
-                chunk.set(inChunk, value);
-            } else {
-                chunkAt_shift;
-                chunk.set(inChunk, value);
-            }
-        }
+
+        inline const Chunk_T::value_type& get(const Point& at) const requires (!Chunk_T::isBitfieldGrid) { SG_SPARSE_GRID_SET_GET(chunk.get(inChunk)) }
+        inline Chunk_T::value_type get(const Point& at) const requires (Chunk_T::isBitfieldGrid) { SG_SPARSE_GRID_SET_GET(chunk.get(inChunk)) }
+        inline Chunk_T::value_type& get(const Point& at) requires (!Chunk_T::isBitfieldGrid) { return const_cast<Chunk_T::value_type&>(std::as_const(*this).get(at)); }
+
+        inline void set(const Point& at, const Chunk_T::value_type& value) { SG_SPARSE_GRID_SET_GET(chunk.set(inChunk, value)) }
+        #undef SG_SPARSE_GRID_SET_GET
 
         [[nodiscard]] inline SG_Grid::Point chunkLocation(const Point& at) const {
             if constexpr (!is2Power) return Point(at.x()/chunkWidth,at.y()/chunkHeight);

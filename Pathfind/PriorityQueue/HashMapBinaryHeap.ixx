@@ -13,9 +13,8 @@ import SG_Allocator;
 import :GridRangeHashMap;
 import :BinaryHeap;
 
-
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool useContains = true, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
     class HashMapBinaryHeap {
     public:
         HashMapBinaryHeap(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
@@ -32,11 +31,14 @@ export namespace SG_Pathfind::PriorityQueue {
         return out;
     }
 
-    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_ ) {
+    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_, bool force = false) {
         auto& priority = queue.encodePriority(priority_);
         if constexpr (noHashSet) queue.insert(tile, priority);
         else {
-            if (!hashMap.contains(tile)) {
+            bool toInsert;
+            if constexpr (!useContains) {toInsert = force;}
+            else toInsert = force || !hashMap.contains(tile);
+            if (toInsert) {
                 queue.forceInsert(tile, priority);
                 hashMap.insert(tile, priority);
                 return;
@@ -57,6 +59,6 @@ export namespace SG_Pathfind::PriorityQueue {
     private:
         struct empty{};
         BinaryHeap<SG_Grid::Point, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO add some outer template parameters for rook/queen, and reserveDivisor
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, SG_Grid::u_coordinate_t , useBitfield>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, SG_Grid::u_coordinate_t, useContains, useBitfield>>  hashMap;
     };
 }

@@ -24,7 +24,7 @@ void testBinaryHeap(){
     assert(bq.valueAt(bq.encodePriority(2)) == 10);
     assert(bq.findMin() == bq.encodePriority(2));
     assert(bq.extractMin() == 10);
-    LOGGER_ASSERT_ERROR( bq.valueAt(bq.encodePriority(2)) == 10; )
+    LOGGER_ASSERT_ERROR( bq.valueAt(bq.encodePriority(2)); )
 
     bq.insert(11,bq.encodePriority(2));
     bq.insert(12,bq.encodePriority(5));

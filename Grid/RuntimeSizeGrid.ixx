@@ -3,6 +3,7 @@
 //
 module;
 #include "Logger.h"
+#include <utility>
 
 export module SG_Grid:RuntimeSizeGrid;
 import :Point;
@@ -30,8 +31,9 @@ export namespace SG_Grid {
         requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         RuntimeSizeGrid(InsideArenaType& arena, const bool& dummyA, const bool& dummyB, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){} //Constructor to conform to SparseGrid compatibility
 
-        inline T& get(const Point& at) requires (!useBitfield)  {return impl.get(at);}
-        inline T get(const Point& at) requires (useBitfield)  {return impl.get(at);}
+        inline const T& get(const Point& at) const requires (!useBitfield)  {return impl.get(at);}
+        inline T get(const Point& at) const requires (useBitfield)  {return impl.get(at);}
+        inline T& get(const Point& at) requires (!useBitfield)  {return const_cast<T&>(std::as_const(*this).get(at));}
 
         template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!useBitfield) { return impl.construct(at, args...);}
         inline void set(const Point& at, const T& value) {impl.set(at, value);}
