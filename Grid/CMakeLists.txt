@@ -17,4 +17,4 @@ target_sources(SG_Grid
 		SparseGrid.ixx
 		RuntimeSizeGrid.ixx
 )
-target_link_libraries(SG_Grid PRIVATE LocalDataStructures Logger SG_Allocator)
+target_link_libraries(SG_Grid PRIVATE Logger SG_Allocator)

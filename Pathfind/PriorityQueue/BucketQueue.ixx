@@ -23,7 +23,8 @@ export namespace SG_Pathfind::PriorityQueue {
         static_assert(std::is_integral_v<priority_t>, "Priority must be an integral type.");
     public:
         BucketQueue(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) :
-            buckets(arena, maxPriority_-minPriority_+1)
+            bucketCount(maxPriority_ - minPriority_ + 1)
+            ,buckets(arena, bucketCount)
             ,minIndex(0)
             ,minPriority(minPriority_)
             ,length_(0)
@@ -32,9 +33,8 @@ export namespace SG_Pathfind::PriorityQueue {
         #endif
         {
             LOGGER_ASSERT_EXCEPT(maxPriority_ >= minPriority_);
-            auto* start = buckets.alloc_back(buckets.maxSize());
-            std::memset(start, 0, buckets.maxSize()*sizeof(list_t)); //0-byte-init all buckets -> Requires linkedlist be 0-byte initialisable
-            for (priority_t i = 1; i < buckets.maxSize(); ++i) buckets.get(i).init(arena);
+            std::memset(buckets.impl(), 0, buckets.maxSize()*sizeof(list_t)); //0-byte-init all buckets -> Requires linkedlist be 0-byte initialisable
+            for (priority_t i = 0; i < bucketCount; ++i) buckets.get(i).init(arena);
             //for (auto i = 0; i < buckets.maxSize(); i++) buckets.construct_back(arena);
         };
 
@@ -50,7 +50,7 @@ export namespace SG_Pathfind::PriorityQueue {
             #endif
             void* node = nullptr;
             priority_t bucket = minIndex;
-            for (;bucket < buckets.length(); ++bucket) {
+            for (;bucket < bucketCount; ++bucket) {
                 node = inBucket(value, bucket);
                 if (node != nullptr) break;
             }
@@ -70,7 +70,7 @@ export namespace SG_Pathfind::PriorityQueue {
 
         inline const priority_t& findMin() {
             LOGGER_ASSERT_EXCEPT(length_ > 0)
-            for (; minIndex < buckets.length(); ++minIndex) if (buckets.get(minIndex).length() > 0) return minIndex;
+            for (; minIndex < bucketCount; ++minIndex) if (buckets.get(minIndex).length() > 0) return minIndex;
             return minIndex;
         }
 
@@ -114,12 +114,13 @@ export namespace SG_Pathfind::PriorityQueue {
         }
 
         inline void softClear() {
-            for (priority_t i = 0; i < buckets.length(); ++i) while (buckets.get(i).length() > 0) buckets.get(i).remove_front();
+            for (priority_t i = 0; i < bucketCount; ++i) while (buckets.get(i).length() > 0) buckets.get(i).remove_front();
         }
 
     private:
         typedef SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, true, true> list_t;
-        SG_Allocator::ULL2<InsideArenaType, list_t> buckets;
+        priority_t bucketCount;
+        SG_Allocator::RuntimeArray<list_t> buckets;
 
         priority_t minIndex;
         priority_t minPriority;

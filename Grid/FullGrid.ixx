@@ -29,7 +29,7 @@ export namespace SG_Grid {
 
         template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         explicit FullGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && is2Power) :
-            impl(arena.template allocArray<internalT>(internalWidth(width) * height)),
+            impl(arena,(internalWidth(width) * height)),
             width_var(width),
             height_var(height),
             widthMult(std::bit_width((width_var))-1),
@@ -38,7 +38,7 @@ export namespace SG_Grid {
 
         template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
         explicit FullGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && !is2Power) :
-            impl(arena.template allocArray<internalT>(internalWidth(width) * height)),
+            impl(arena,(internalWidth(width) * height)),
             width_var(width),
             height_var(height)
         { LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);}
@@ -73,8 +73,8 @@ export namespace SG_Grid {
                 }
         }
         inline void fill_memset(const char& toFill){
-            if constexpr (width_ != 0) std::memset(&impl, toFill, height_ * compileTimeInternalWidth());
-            else std::memset(impl, toFill, height() * internalWidth(width()) * sizeof(internalT));
+            if constexpr (width_ != 0) std::memset(impl, toFill, height_ * compileTimeInternalWidth());
+            else std::memset(impl.impl(), toFill, height() * internalWidth(width()) * sizeof(internalT));
         }
 
         template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) {
@@ -94,7 +94,7 @@ export namespace SG_Grid {
         typedef std::conditional_t<isBitfield, char, T> internalT;
         struct empty{};
 
-        std::conditional_t<width_ != 0, std::array<std::array<internalT,height_>,compileTimeInternalWidth()>, internalT*> impl;
+        std::conditional_t<width_ != 0, std::array<std::array<internalT,height_>,compileTimeInternalWidth()>, SG_Allocator::RuntimeArray<internalT>> impl;
         const u_coordinate_t width_var;
         const u_coordinate_t height_var;
         [[no_unique_address]] std::conditional_t<is2Power, const u_coordinate_t, empty> widthMult;
