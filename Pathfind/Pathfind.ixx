@@ -12,5 +12,6 @@ export import :GridRangeHashMap;
 export import :HashMapBucketQueue;
 export import :HashMapBinaryHeap;
 
+import LocalDataStructures;
 export import :BFS;
 

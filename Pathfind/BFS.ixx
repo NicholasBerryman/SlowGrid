@@ -4,12 +4,11 @@
 module;
 
 export module SG_Pathfind:BFS;
-//import LocalDataStructures;
+import LocalDataStructures;
 import SG_Allocator;
 import SG_Grid;
 
 export namespace SG_Pathfind::BFS {
-/*
     template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, const SG_Grid::u_coordinate_t maxOutputNodes = 256>//TODO make a default number for this in a config file
     LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>&  BFS_Point(const Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& distance) {
         auto& out(*outArena.template allocConstruct<LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>>(outArena, maxOutputNodes));
@@ -34,5 +33,4 @@ export namespace SG_Pathfind::BFS {
         arena.sublifetime_rollback();
         return visited;
     }
-*/
 }
