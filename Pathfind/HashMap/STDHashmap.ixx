@@ -11,6 +11,7 @@ module;
 
 export module SG_Pathfind:STDHashMap;
 import :BaseHashMap;
+import SG_Grid;
 import Logger;
 
 export namespace SG_Pathfind::HashMap {
