@@ -11,6 +11,8 @@ export import :BaseHashMap;
 export import :GridRangeHashMap;
 export import :HashMapBucketQueue;
 export import :HashMapBinaryHeap;
+export import :STDHashMap;
+export import :STDPriorityQueue;
 
 import LocalDataStructures;
 export import :BFS;

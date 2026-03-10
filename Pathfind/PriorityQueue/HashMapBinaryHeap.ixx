@@ -13,7 +13,6 @@ import SG_Allocator;
 import :GridRangeHashMap;
 import :BinaryHeap;
 
-
 export namespace SG_Pathfind::PriorityQueue {
     template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
     class HashMapBinaryHeap {

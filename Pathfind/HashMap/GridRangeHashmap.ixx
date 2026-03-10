@@ -89,7 +89,6 @@ export namespace SG_Pathfind::HashMap {
         inline void clear() {
             if constexpr (partitionContains == 0) containsGrid.fill_memset(0);
             else containsChunkLoaded.fill_memset(0);
-            if constexpr (partitionContains != 0) containsChunkLoaded.fill_memset(0);
             if constexpr (partitionGet_ > 0) getChunkLoaded.fill_memset(0);
         }
 
