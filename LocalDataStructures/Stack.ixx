@@ -26,7 +26,7 @@ namespace LocalDataStructures {
             // Stack(){} -> GOOD! No array initialisation
         inline void push(const T& value);
         inline const T& pop();
-        inline T peek(localSize_t back = 0);
+        inline T peek(localSize_t back = 0); //TODO make a const correct version as well
         inline T& peekRef(localSize_t back = 0);
 
         void clear();
