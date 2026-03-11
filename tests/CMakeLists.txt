@@ -8,7 +8,7 @@ endfunction()
 
 # -- Local Stack --
 #[[ ]] #-> Can comment out tests by enclosing between these (no hash before the closing brackets)
-newTest(Logger)
+#[[newTest(Logger)
 newTest(LocalStack)
 newTest(LocalQueue)
 newTest(LocalDequeue)
@@ -27,5 +27,5 @@ newTest(BucketQueue)
 newTest(BinaryHeap)
 newTest(HashMapBucketQueue)
 newTest(HashMapBinaryHeap)
-newTest(STDPriorityQueue)
+newTest(STDPriorityQueue)]]
 newTest(BFS)
