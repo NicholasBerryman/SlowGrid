@@ -3,6 +3,7 @@
 //
 module;
 #include "Logger.h"
+#include <initializer_list>
 
 export module LocalDataStructures:Stack;
 import LocalDataStructureConfigs;
@@ -24,6 +25,8 @@ namespace LocalDataStructures {
             // Stack() = default -> BAD!!!! Causes an asm 'rep' loop to 0 initialise the array
             // No constructor -> BAD!!!! Same as above
             // Stack(){} -> GOOD! No array initialisation
+        Stack(std::initializer_list<T>&& initialValues) { for (auto elem : initialValues) push(elem); }
+        
         inline void push(const T& value);
         inline const T& pop();
         inline T peek(localSize_t back = 0); //TODO make a const correct version as well

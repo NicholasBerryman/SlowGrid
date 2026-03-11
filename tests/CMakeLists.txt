@@ -7,6 +7,7 @@ function(newTest testName)
 endfunction()
 
 # -- Local Stack --
+#[[ ]] #-> Can comment out tests by enclosing between these (no hash before the closing brackets)
 newTest(Logger)
 newTest(LocalStack)
 newTest(LocalQueue)

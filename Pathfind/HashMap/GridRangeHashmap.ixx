@@ -23,8 +23,11 @@ const SG_Grid::coordinate_t& min(const SG_Grid::coordinate_t& a, const SG_Grid::
     return b;
 }
 
+//TODO allow this HashMap to use a refernce to another HashMap's 'containsGrid'
+    // Or maybe make it possible to create without a 'containtsGrid', but still without zero-initialising the 'get Grid' -> Can then manually use the other set as the containsGrid
+
 export namespace SG_Pathfind::HashMap {
-    template<typename insideArena_t, typename value_t = bool, bool useBitfield=false, uint8_t partitionContains=0, uint8_t partitionGet=0, bool is2Power = false>
+    template<typename insideArena_t, typename value_t = bool, bool useBitfield=true, uint8_t partitionContains=0, uint8_t partitionGet=0, bool is2Power = false>
     class GridRangeHashMap : private BaseHashMap<SG_Grid::Point, value_t, SG_Grid::Point>{
     private:    
         static constexpr uint8_t partitionGet_ = []{if constexpr (std::is_same_v<value_t, bool>) return partitionContains; else return partitionGet;}();

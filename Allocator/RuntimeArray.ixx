@@ -12,6 +12,8 @@ import :PseudoArena;
 import SG_AllocatorConfigs;
 import Logger;
 
+//TODO make LocalDataStructure equivalents that work like this -> Will speed up bfs etc
+
 export namespace SG_Allocator {
     template <typename T, typename size_T = arenaSize_t>
     class RuntimeArray {

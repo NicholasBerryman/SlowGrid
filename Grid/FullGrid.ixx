@@ -73,7 +73,7 @@ export namespace SG_Grid {
                 }
         }
         inline void fill_memset(const char& toFill){
-            if constexpr (width_ != 0) std::memset(impl, toFill, height_ * compileTimeInternalWidth());
+            if constexpr (width_ != 0) std::memset(&(impl[0]), toFill, height_ * compileTimeInternalWidth());
             else std::memset(impl.impl(), toFill, height() * internalWidth(width()) * sizeof(internalT));
         }
 

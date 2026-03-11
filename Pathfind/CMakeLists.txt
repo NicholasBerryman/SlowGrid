@@ -5,7 +5,6 @@ target_sources(SG_Pathfind
         PUBLIC
             FILE_SET CXX_MODULES FILES
                 Pathfind.ixx
-                BFS.ixx
                 PriorityQueue/BasePriorityQueue.ixx
                 PriorityQueue/BucketQueue.ixx
                 PriorityQueue/BinaryHeap.ixx
@@ -15,5 +14,7 @@ target_sources(SG_Pathfind
                 HashMap/BaseHashMap.ixx
                 HashMap/GridRangeHashmap.ixx
                 HashMap/STDHashmap.ixx
+				Utils.ixx
+                BFS.ixx
 )
 target_link_libraries(SG_Pathfind PRIVATE Logger LocalDataStructures SG_Allocator SG_Grid )

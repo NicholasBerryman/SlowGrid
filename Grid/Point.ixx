@@ -45,6 +45,8 @@ export namespace SG_Grid {
         inline Point operator<(const Point& rhs) const {return Point(_x < rhs._x, _y < rhs._y);}
 
         inline Point& abs() {_x = std::abs(_x); _y = std::abs(_y); return *this;}
+        
+        template <typename Grid_T> bool on(const Grid_T& onGrid) const { return _x >= 0 && _x < onGrid.width() && _y >= 0 && _y < onGrid.height(); }
 
     private:
         coordinate_t _x;

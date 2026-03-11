@@ -15,5 +15,6 @@ export import :STDHashMap;
 export import :STDPriorityQueue;
 
 import LocalDataStructures;
+export import :Utils;
 export import :BFS;
 
