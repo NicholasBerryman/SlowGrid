@@ -56,7 +56,7 @@ import :GridRangeHashMap;
             if constexpr (!Flowfield) { if (next == endPoint_) {examine = next; goto found;} } /* We hit the end point - nice! */ \
         } \
     } \
-    found: /* The last remaning use for goto :) */ 
+    found: /* The last remaining use for goto :) */
 
 template<typename A>
 struct queuefiller{

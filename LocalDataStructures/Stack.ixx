@@ -4,108 +4,78 @@
 module;
 #include "Logger.h"
 #include <initializer_list>
+#include <array>
 
 export module LocalDataStructures:Stack;
 import LocalDataStructureConfigs;
 import Logger;
 namespace LocalDataStructures {
+
+    export namespace Base {
+
+        /**
+         * Stack (LIFO) with selectable storage (requires [] operators)
+         * @tparam Collection_T Data type of internal collection
+         * @tparam staticSize If using a statically sized collection, the size of that collection. 0 otherwise.
+         */
+        template<typename Collection_T, typename Length_T, Length_T staticSize = 0> class Stack {
+        private:
+            Length_T stackPointer;
+            Collection_T impl;
+
+        public:
+            template<typename... Args> explicit Stack(Args&&... args) requires (staticSize > 0) : stackPointer(0), impl(args...) {}
+
+            /**
+             * Add item to end of stack
+             * @param value Item to add (copies)
+             */
+            inline void push(const auto& value) { if constexpr (staticSize > 0) {LOGGER_ASSERT_EXCEPT(stackPointer < staticSize);} impl[stackPointer++] = value; }
+
+            /**
+             * Returns and removes item from stack (LIFO)
+             * @return Item at end of stack
+             */
+            inline const auto& pop() {LOGGER_ASSERT_EXCEPT(stackPointer > 0); return impl[--stackPointer];}
+
+            /**
+             * Return *reference to* item from end of stack with offset. Does not remove.
+             * @param back Offset from end of stack. Default is 0 (LIFO)
+             * @return Item at offset from end of stack
+             */
+            inline auto& peekRef(const Length_T& back = 0) {LOGGER_ASSERT_EXCEPT(stackPointer >= 1+back); return impl[stackPointer-1-back];}
+
+            /**
+             * Return *copy of* item from end of stack with offset. Does not remove.
+             * @param back Offset from end of stack. Default is 0 (LIFO)
+             * @return Item at offset from end of stack
+             */
+            inline auto peek(const Length_T& back = 0) {return peekRef(back); }//TODO make a const correct version as well
+
+            /**
+             * Sets stack to empty state (does NOT call destructors)
+             */
+            void clear() { stackPointer = 0; }
+
+            [[nodiscard]] static inline Length_T maxLength() requires (staticSize > 0) {return staticSize; }
+            [[nodiscard]] inline const Length_T& length() const {return stackPointer; };
+        };
+    }
+
     /**
      * Stack (LIFO) with local (non heap-deferred) storage
      * @tparam T Data type of elements
      * @tparam size Maximum number of elements
      */
-    export template<typename T, localSize_t size> class Stack {
+    export template<typename T, localSize_t size> class Stack: public Base::Stack<std::array<T, size>, localSize_t, size> {
         static_assert(size > 0, "Size must be larger than 0");
-    private:
-        localSize_t stackPointer = 0;
-        T impl[size];
+        typedef Base::Stack<std::array<T, size>, localSize_t, size> parent;
 
-    public:
-        Stack() {} // Leaving this as a default constructor seems to cause the impl array to be 0-initialised (slow) [Tested on g++15 for Linux)
-            // Stack() = default -> BAD!!!! Causes an asm 'rep' loop to 0 initialise the array
-            // No constructor -> BAD!!!! Same as above
-            // Stack(){} -> GOOD! No array initialisation
-        Stack(std::initializer_list<T>&& initialValues) { for (auto elem : initialValues) push(elem); }
-        
-        inline void push(const T& value);
-        inline const T& pop();
-        inline T peek(localSize_t back = 0); //TODO make a const correct version as well
-        inline T& peekRef(localSize_t back = 0);
-
-        void clear();
-
-        [[nodiscard]] static inline localSize_t maxLength();
-        [[nodiscard]] inline localSize_t length() const;
+        public:
+            inline Stack() : parent() {}
+            inline Stack(std::initializer_list<T>&& initialValues) : parent() { for (auto elem : initialValues) parent::push(elem); }
 
     };
-}
-
-/**
- * Add item to end of stack
- * @param value Item to add (copies)
- */
-template<typename T, localSize_t size>
-void LocalDataStructures::Stack<T, size>::push(const T& value) {
-    LOGGER_ASSERT_EXCEPT(stackPointer < size);
-    impl[stackPointer++] = value;
-}
-
-
-/**
- * Returns and removes item from stack (LIFO)
- * @return Item at end of stack
- */
-template<typename T, localSize_t size>
-const T& LocalDataStructures::Stack<T, size>::pop() {
-    LOGGER_ASSERT_EXCEPT(stackPointer > 0);
-    return impl[--stackPointer];
-}
-
-/**
- * Return *copy of* item from end of stack with offset. Does not remove.
- * @param back Offset from end of stack. Default is 0 (LIFO)
- * @return Item at offset from end of stack
- */
-template<typename T, localSize_t size>
-T LocalDataStructures::Stack<T, size>::peek(const localSize_t back) {
-    return peekRef(back);
-}
-
-/**
- * Return *reference to* item from end of stack with offset. Does not remove.
- * @param back Offset from end of stack. Default is 0 (LIFO)
- * @return Item at offset from end of stack
- */
-template<typename T, localSize_t size>
-T &LocalDataStructures::Stack<T, size>::peekRef(const localSize_t back) {
-    LOGGER_ASSERT_EXCEPT(stackPointer >= 1+back);
-    return impl[stackPointer-1-back];
-}
-
-/**
- * Sets stack to empty
- */
-template<typename T, localSize_t size>
-void LocalDataStructures::Stack<T, size>::clear() {
-    stackPointer = 0;
-}
-
-/**
- *
- * @return Number of elements in the stack
- */
-template<typename T, localSize_t size>
-localSize_t LocalDataStructures::Stack<T, size>::length() const {
-    return stackPointer;
-}
-
-/**
- *
- * @return Maximum number of elements supported by this stack
- */
-template<typename T, localSize_t size>
-localSize_t LocalDataStructures::Stack<T, size>::maxLength() {
-    return size;
 }
 
 
