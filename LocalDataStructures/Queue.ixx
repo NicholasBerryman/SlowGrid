@@ -28,7 +28,7 @@ namespace LocalDataStructures {
             [[no_unique_address]] std::conditional_t<staticSize != 0, empty, Length_T> internalSize;
 
             constexpr static Length_T implSiz() requires (staticSize > 0) {return staticSize+1;}
-            const Length_T& implSiz() requires (staticSize == 0) {return internalSize+1;}
+            Length_T implSiz() const requires (staticSize == 0) {return internalSize+1;}
 
             inline static Length_T wrapSubtract(const Length_T& a) {
                 if constexpr (staticSize > 0) { LOGGER_ASSERT_EXCEPT(a >= 1 || (1-a) <= staticSize); }
@@ -39,6 +39,12 @@ namespace LocalDataStructures {
 
         public:
             template<typename... Args> explicit Queue(Args&&... args) requires (staticSize > 0): tail(0), head(0), impl(args...) {}
+
+            /**
+             *
+             * @param maxSize Maximum queue size. MUST BE LESS THAN THE LENGTH OF THE CONTAINER (NOT EQUAL TO!)
+             * @param args Arguments to pass to constructor of a container of the given type
+             */
             template<typename... Args> explicit Queue(const Length_T& maxSize, Args&&... args) requires (staticSize == 0): tail(0), head(0), impl(args...), internalSize(maxSize) {}
 
             /**

@@ -14,18 +14,18 @@ import SG_Allocator;
 import :GridRangeHashMap;
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool queensCase = true, bool useBitfield = false, bool doubleBuffer = true, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool queensCase = true, bool doubleBuffer = true,  bool useBitfield = false, bool noHashSet = false>
     class NoPriorityQueue {
     public:
         static SG_Grid::u_coordinate_t maxQueueSize(const SG_Grid::u_coordinate_t& maxDistance) {
-            if constexpr (queensCase) return 8*maxDistance+1+1; //extra plus one is a queue requirement
-            return 4*maxDistance+1+1; //extra plus one is a queue requirement
+            if constexpr (queensCase) return 8*maxDistance+1; //extra plus one is a queue requirement
+            return 4*maxDistance+1; //extra plus one is a queue requirement
         }
 
-        NoPriorityQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxDistanceSelectedCase, const SG_Grid::coordinate_t& minCost = 0) :
-            queue(arena, maxQueueSize(maxDistanceSelectedCase)),
-            queue2(arena, maxQueueSize(maxDistanceSelectedCase)),
-            hashMap(arena, within, centrePoint, maxDistanceChebyshev),
+        NoPriorityQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistance, const SG_Grid::coordinate_t& maxCost = 0, const SG_Grid::coordinate_t& minCost = 0) :
+            queue(maxQueueSize(maxDistance), arena, maxQueueSize(maxDistance)+1),
+            queue2(maxQueueSize(maxDistance), arena, maxQueueSize(maxDistance)+1),
+            hashMap(arena, within, centrePoint, maxDistance),
             swap(false) {}
 
         inline SG_Grid::Point valueAt(const SG_Grid::u_coordinate_t& priority) {
@@ -63,7 +63,7 @@ export namespace SG_Pathfind::PriorityQueue {
             }
 
             if constexpr (doubleBuffer) {
-                auto& q = !swap ? queue : queue2;
+                auto& q = !swap ? queue2 : queue;
                 q.push(tile);
                 return;
             }
@@ -81,21 +81,18 @@ export namespace SG_Pathfind::PriorityQueue {
 
         inline bool trySwap() {
             if constexpr (!doubleBuffer) { return false; }
-            if (!swap && queue.length() == 0) {swap = true; return true;}
-            if (swap && queue2.length() == 0) {swap = false; return true;}
-            return false;
+            else {
+                if (!swap && queue.length() == 0) {swap = true; return true;}
+                if (swap && queue2.length() == 0) {swap = false; return true;}
+                return false;
+            }
         }
 
         private:
             LocalDataStructures::Base::Queue<SG_Allocator::RuntimeArray<SG_Grid::Point, SG_Grid::u_coordinate_t>, SG_Grid::u_coordinate_t> queue;
             struct empty {
-                empty(const InsideArenaType&, const SG_Grid::u_coordinate_t&){}
+                empty(const SG_Grid::u_coordinate_t&, const InsideArenaType&, const SG_Grid::u_coordinate_t&){}
                 empty(bool){}
-                auto length(){return queue.length();}
-                auto clear() {queue.clear();}
-                auto push(const auto& a){queue.push(a);}
-                auto pop(){return queue.pop();}
-                auto peek(){return queue.peek();}
             };
 
             bool queueContains(const SG_Grid::Point& p){ for (auto i = 0; i < queue.length(); ++i){if (queue.peek(i) == p) return true; }; return false; }

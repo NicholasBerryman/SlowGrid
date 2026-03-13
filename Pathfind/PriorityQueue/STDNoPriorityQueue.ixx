@@ -10,7 +10,7 @@ module;
 #include <functional>
 #include <algorithm>
 
-export module SG_Pathfind:STDPriorityQueue;
+export module SG_Pathfind:STDNoPriorityQueue;
 import :BasePriorityQueue;
 import Logger;
 import SG_Grid;
@@ -42,7 +42,7 @@ export namespace SG_Pathfind::PriorityQueue {
         queue.pop();
         return out;
     }
-    
+
     inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority ) {
         ++counter;
         if constexpr (noHashSet) queue.smartInsert(tile, priority, counter);
@@ -58,7 +58,7 @@ export namespace SG_Pathfind::PriorityQueue {
             queue.smartInsert(tile, priority, counter); //Automatically handles decreaseKey
         }
     }
-    
+
     inline void clear() {
         while (!queue.empty()) queue.pop();
     }

@@ -30,10 +30,12 @@ void testQueen(){
     assert(BFS1_1(grid, arena, arena, {3,3}, {0,0}, 4).length() == 0);
     assert(!BFS2_1(grid, arena, arena, {3,3}, 4).contains({0,0}));
     assert(!BFS3_1(grid, arena, arena, {3,3}, 4).contains({0,0}));
-    
+
     grid.fill(1);
     assert(BFS1_1(grid, arena, arena, {3,3}, {0,0}, 4).length() == 1);
     assert(BFS2_1(grid, arena, arena, {3,3}, 4).get({0,0}) == SG_Grid::Point(-1,-1));
+    auto test = BFS3_1(grid, arena, arena, {3,3}, 4).get({0,0});
+
     assert(BFS3_1(grid, arena, arena, {3,3}, 4).get({0,0}) == 3);
     
     grid.set({2,2},0);
@@ -61,6 +63,11 @@ void testRook(){
     assert(BFS1_2(grid, arena, arena, {3,3}, {0,0}, 8).length() == 3);
     assert(BFS2_2(grid, arena, arena, {3,3}, 8).get({0,0}) == SG_Grid::Point(0,-1));
     assert(BFS3_2(grid, arena, arena, {3,3}, 8).get({0,0}) == 6);
+
+
+    assert(BFS1_2(grid, arena, arena, {1,1}, {0,0}, 2).length() == 2);
+    assert(BFS2_2(grid, arena, arena, {1,1}, 2).get({0,0}) == SG_Grid::Point(0,-1));
+    assert(BFS3_2(grid, arena, arena, {1,1}, 2).get({0,0}) == 2);
 }
 
 int main(int, char**) {

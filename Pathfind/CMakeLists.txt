@@ -11,6 +11,7 @@ target_sources(SG_Pathfind
                 PriorityQueue/HashMapBucketQueue.ixx
                 PriorityQueue/HashMapBinaryHeap.ixx
                 PriorityQueue/STDPriorityQueue.ixx
+				PriorityQueue/NoPriorityQueue.ixx
                 HashMap/BaseHashMap.ixx
                 HashMap/GridRangeHashmap.ixx
                 HashMap/STDHashmap.ixx

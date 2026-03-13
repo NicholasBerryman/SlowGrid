@@ -15,53 +15,43 @@ import SG_Allocator;
 import SG_Grid;
 import :Utils;
 import :GridRangeHashMap;
+import :NoPriorityQueue;
 
 //TODO make some const grid get functions and use them to make OnGrid a const reference
 
+//TODO convert this into a function that uses references (in Utils.ixx)
 #define SG_PATHFIND_BFS(Flowfield, Distances) \
-    SG_Allocator::LinkedList<WorkingArenaType, SG_Grid::Point, SG_Grid::u_coordinate_t> frontier(arena); /* TODO replace with runtime-sized queue */ \
-    std::conditional_t<Distances, queuefiller<WorkingArenaType>, decltype(frontier)> frontier2(arena); \
-    frontier.construct_back(startPoint); \
+    PriorityQueue::NoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, true, false> frontier(arena, OnGrid, startPoint, searchDistance); \
+    if constexpr (Distances) Dmat.insert(startPoint, 0); \
+    frontier.insert(startPoint); \
     SG_Grid::Point examine = startPoint; \
     visited.insert(startPoint, startPoint); \
-    if constexpr (Distances) Dmat.insert(startPoint, 0); \
     SG_Grid::u_coordinate_t nextDistance = !Distances; \
-    bool bufferSwap = false; \
-    while (frontier.length() > 0 || frontier2.length() > 0){ \
-        if constexpr (!Distances){ \
-            if (!bufferSwap && frontier.length() == 0) {bufferSwap = true; ++nextDistance;} \
-            if (bufferSwap && frontier2.length() == 0) {bufferSwap = false; ++nextDistance;} \
-        } \
-        if (!bufferSwap) { \
-            examine = frontier.get_fromFront(0); \
-            frontier.remove_front(); \
-        } else { \
-            examine = frontier2.get_fromFront(0); \
-            frontier2.remove_front(); \
-        } \
+    frontier.trySwap(); \
+    while (frontier.length() > 0) { \
+        examine = frontier.extractMin(); \
         if constexpr (Distances){ nextDistance = Dmat.get(examine)+1; } \
-        /*std::cout << examine.x() << "," << examine.y() << " | " << frontier.length() << " | " << nextDistance << std::endl;*/ \
-        if (nextDistance > searchDistance) break;\
+        if (nextDistance > searchDistance) break; \
         for (auto i = 0; i < directions.length(); ++i){ \
             auto next = examine + directions.peekRef(i); \
             if (!(next.on(OnGrid))) continue; /* Don't look past the grid bounds */ \
-            if (OnGrid.get(next) && !visited.contains(next)) { /* Not a wall (0 = wall), and not visited */ \
-                if constexpr (!Distances){ \
-                    if (bufferSwap) frontier.construct_back(next); \
-                    else frontier2.construct_back(next); \
-                } else frontier.construct_back(next); \
-                visited.insert(next, directions.peekRef(i)); \
-                if constexpr (Distances) Dmat.insert(next, nextDistance); \
+            if (OnGrid.get(next)) { /* Not a wall (0 = wall)*/ \
+                frontier.insert(next); /*automatically checks for duplicates (TODO give it a template option to allow external hashset contains to be used -> reduce amount of initialisation for parallel hashset contains) */ \
+                if (!visited.contains(next)) { \
+                    visited.insert(next, directions.peekRef(i)); \
+                    if constexpr (Distances) Dmat.insert(next, nextDistance); \
+                } \
             } \
-            if constexpr (!Flowfield) { if (next == endPoint_) {examine = next; goto found;} } /* We hit the end point - nice! */ \
+            if constexpr (!Flowfield) { if (next == endPoint_) { examine = next; goto found; } } /* We hit the end point - nice! */ \
         } \
+        if constexpr (!Distances) { if (frontier.trySwap()) ++nextDistance; } \
     } \
     found: /* The last remaining use for goto :) */
 
 template<typename A>
 struct queuefiller{
     queuefiller(const A&){}
-    SG_Grid::Point get_fromFront(const SG_Grid::u_coordinate_t& i){return SG_Grid::Point(0,0);}
+    SG_Grid::Point get_fromFront(const SG_Grid::u_coordinate_t& i){return {0,0};}
     void remove_front(){}
     void construct_back(const SG_Grid::Point& p){}
     SG_Grid::u_coordinate_t length(){return 0;}
@@ -101,7 +91,7 @@ export namespace SG_Pathfind::BFS {
             //Can use the 'contains' method to check if a point is reachable from the startPoint
 
         arena.sublifetime_open();
-        SG_PATHFIND_BFS(true, false); //TODO fix to work with distance false so we don't need Dmat anymore;
+        SG_PATHFIND_BFS(true, false);
         
         arena.sublifetime_rollback();
         return visited;
