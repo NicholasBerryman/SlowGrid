@@ -15,7 +15,7 @@ template <typename T>
 void testOnStack(){
     SG_Allocator::Arena_ULL<50000,3> arena;
     SG_Grid::FullGrid<int,11,11> grid;
-    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, false> hash(arena, grid, SG_Grid::Point(5,5), 3);
+    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, true, false> hash(arena, grid, SG_Grid::Point(5,5), 3);
 
     assert(hash.calcHash(SG_Grid::Point(4,4)) == SG_Grid::Point(2,2));
     assert(hash.calcHash(SG_Grid::Point(8,8)) == SG_Grid::Point(6,6));
@@ -58,7 +58,7 @@ void testOnStack(){
 void testBitfield(){
     SG_Allocator::Arena_ULL<50000,3> arena;
     SG_Grid::FullGrid<int,11,11> grid;
-    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), bool, true> hash(arena, grid, SG_Grid::Point(5,5), 3);
+    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), bool,true, true> hash(arena, grid, SG_Grid::Point(5,5), 3);
 
     assert(hash.calcHash(SG_Grid::Point(4,4)) == SG_Grid::Point(2,2));
     assert(hash.calcHash(SG_Grid::Point(8,8)) == SG_Grid::Point(6,6));
@@ -87,7 +87,7 @@ template <typename T>
 void testContainsPartitioned(){
     SG_Allocator::Arena_ULL<50000,3> arena;
     SG_Grid::FullGrid<int,11,11> grid;
-    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, false, 1, 0> hash(arena, grid, SG_Grid::Point(5,5), 3);
+    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, true, false, 1, 0> hash(arena, grid, SG_Grid::Point(5,5), 3);
 
 
     assert(hash.calcHash(SG_Grid::Point(4,4)) == SG_Grid::Point(2,2));
@@ -128,7 +128,7 @@ template <typename T>
 void testGetPartitioned(){
     SG_Allocator::Arena_ULL<50000,3> arena;
     SG_Grid::FullGrid<int,11,11> grid;
-    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, false, 0, 1> hash(arena, grid, SG_Grid::Point(5,5), 3);
+    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, true, false, 0, 1> hash(arena, grid, SG_Grid::Point(5,5), 3);
 
 
     assert(hash.calcHash(SG_Grid::Point(4,4)) == SG_Grid::Point(2,2));
@@ -180,7 +180,7 @@ void testGridEdge(){
     LOGGER_ASSERT_ERROR( hash.insert({12,12}, 18); )
     LOGGER_ASSERT_ERROR( hash.insert({7,7}, 19); )
 
-    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, false> hash2(arena, grid, SG_Grid::Point(1,1), 3);
+    SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena), T, true, false> hash2(arena, grid, SG_Grid::Point(1,1), 3);
     hash2.insert({3,3}, 3);
     hash2.insert({4,4}, 9);
     hash2.insert({0,0},10);

@@ -14,7 +14,7 @@ export namespace SG_Grid {
     template<typename T>
     class BaseGrid {
     public:
-        inline T& get(const Point& at){Logging::assert_except(0); return nullptr;}
+        inline T& get(const Point& at){Logging::assert_except(0); return reinterpret_cast<T&>(*this);}
         inline void set(const Point& at, const T& value){Logging::assert_except(0);}
         inline coordinate_t width(){Logging::assert_except(0); return 0;}
         inline coordinate_t height(){Logging::assert_except(0); return 0;}

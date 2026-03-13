@@ -15,7 +15,7 @@ import :BucketQueue;
 
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool useContains = true, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
     class HashMapBucketQueue {
     public:
         HashMapBucketQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
@@ -36,6 +36,7 @@ export namespace SG_Pathfind::PriorityQueue {
         auto priority = queue.encodePriority(priority_);
         if constexpr (noHashSet) queue.insert(tile, priority);
         else {
+            //TODO add logic for useContains (must be able to handle cases where it doesn't exist, and cases where it need decrease-key)
             if (!hashMap.contains(tile)) {
                 hashMap.insert(tile, {queue.forceInsert(tile, priority), priority});
                 return;
@@ -60,6 +61,6 @@ export namespace SG_Pathfind::PriorityQueue {
         };
         struct empty{};
         BucketQueue<SG_Grid::Point, SG_Grid::u_coordinate_t, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO make bucketSize_t the same as priority_t in the BucketQueue implementation -> makes it work nicer with the binary heap version too
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, useBitfield>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, useContains, useBitfield>>  hashMap;
     };
 }

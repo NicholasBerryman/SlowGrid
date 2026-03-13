@@ -14,7 +14,7 @@ import SG_Allocator;
 import :GridRangeHashMap;
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool queensCase = true, bool doubleBuffer = true,  bool useBitfield = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool queensCase = true, bool doubleBuffer = true, bool useContains = true,  bool useBitfield = false, bool noHashSet = false>
     class NoPriorityQueue {
     public:
         static SG_Grid::u_coordinate_t maxQueueSize(const SG_Grid::u_coordinate_t& maxDistance) {
@@ -58,7 +58,7 @@ export namespace SG_Pathfind::PriorityQueue {
         inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority = 0) {
             if constexpr (noHashSet)  {if (queueContains(tile)) return;}
             else {
-                if (hashMap.contains(tile)) return;
+                if constexpr (useContains) if (hashMap.contains(tile)) return;
                 hashMap.insert(tile);
             }
 
@@ -98,7 +98,7 @@ export namespace SG_Pathfind::PriorityQueue {
             bool queueContains(const SG_Grid::Point& p){ for (auto i = 0; i < queue.length(); ++i){if (queue.peek(i) == p) return true; }; return false; }
             [[no_unique_address]] std::conditional_t<doubleBuffer, decltype(queue), empty> queue2;
 
-            [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, bool, useBitfield>>  hashMap;
+            [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, bool, useContains, useBitfield>>  hashMap;
             [[no_unique_address]] std::conditional_t<doubleBuffer, bool, empty> swap;
     };
 }

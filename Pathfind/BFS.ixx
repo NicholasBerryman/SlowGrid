@@ -19,25 +19,27 @@ import :NoPriorityQueue;
 
 //TODO convert this into a function that uses references (in Utils.ixx)
 #define SG_PATHFIND_BFS(Flowfield, Distances) \
-    PriorityQueue::NoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, true, false> frontier(arena, OnGrid, startPoint, searchDistance); \
-    if constexpr (Distances) Dmat.insert(startPoint, 0); \
+    PriorityQueue::NoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, false, false> frontier(arena, OnGrid, startPoint, searchDistance); \
+    if constexpr (Distances) visited.insert(startPoint, 0); \
     frontier.insert(startPoint); \
     SG_Grid::Point examine = startPoint; \
-    visited.insert(startPoint, startPoint); \
+    if constexpr (!Distances) visited.insert(startPoint, startPoint); \
+    else visited.insert(startPoint, 0); \
     SG_Grid::u_coordinate_t nextDistance = !Distances; \
     frontier.trySwap(); \
     while (frontier.length() > 0) { \
         examine = frontier.extractMin(); \
-        if constexpr (Distances){ nextDistance = Dmat.get(examine)+1; } \
+        if constexpr (Distances){ nextDistance = visited.get(examine)+1; } \
         if (nextDistance > searchDistance) break; \
         for (auto i = 0; i < directions.length(); ++i){ \
             auto next = examine + directions.peekRef(i); \
             if (!(next.on(OnGrid))) continue; /* Don't look past the grid bounds */ \
             if (OnGrid.get(next)) { /* Not a wall (0 = wall)*/ \
-                frontier.insert(next); /*automatically checks for duplicates (TODO give it a template option to allow external hashset contains to be used -> reduce amount of initialisation for parallel hashset contains) */ \
+                bool alreadyChecked;  \
                 if (!visited.contains(next)) { \
-                    visited.insert(next, directions.peekRef(i)); \
-                    if constexpr (Distances) Dmat.insert(next, nextDistance); \
+                    frontier.insert(next); \
+                    if constexpr (Distances) visited.insert(next, nextDistance); \
+                    else visited.insert(next, directions.peekRef(i)); \
                 } \
             } \
             if constexpr (!Flowfield) { if (next == endPoint_) { examine = next; goto found; } } /* We hit the end point - nice! */ \
@@ -45,20 +47,6 @@ import :NoPriorityQueue;
         if constexpr (!Distances) { if (frontier.trySwap()) ++nextDistance; } \
     } \
     found: /* The last remaining use for goto :) */
-
-template<typename A>
-struct queuefiller{
-    queuefiller(const A&){}
-    SG_Grid::Point get_fromFront(const SG_Grid::u_coordinate_t& i){return {0,0};}
-    void remove_front(){}
-    void construct_back(const SG_Grid::Point& p){}
-    SG_Grid::u_coordinate_t length(){return 0;}
-};
-
-struct dmatfiller{
-    void insert(SG_Grid::Point a, SG_Grid::u_coordinate_t b){}
-    SG_Grid::u_coordinate_t get(SG_Grid::Point a){return 0;}
-};
 
 export namespace SG_Pathfind::BFS {
     template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true, const SG_Grid::u_coordinate_t maxOutputNodes = 256>//TODO make a default number for this in a config file
@@ -68,8 +56,7 @@ export namespace SG_Pathfind::BFS {
         auto directions = Utils::AvailableMoves<queensCase>();
         auto& out(*(outArena.template allocConstruct<LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>>()));
         const auto& endPoint_(endPoint); //Needs to be defined for the macro, even though we don't actually use it -> Blame how constexpr ifs evaluate
-        dmatfiller Dmat;
-        
+
         arena.sublifetime_open();
         HashMap_t visited(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
         SG_PATHFIND_BFS(false, false);
@@ -78,15 +65,12 @@ export namespace SG_Pathfind::BFS {
         return out;
     }
     
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true>//TODO make a default number for this in a config file
+    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true>
     HashMap_t&  BFS_Flowfield(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
         auto directions = SG_Pathfind::Utils::AvailableMoves<queensCase>();
         const SG_Grid::Point& endPoint_ = {0,0}; //Needs to be defined for the macro, even though we don't actually use it -> Blame how constexpr ifs evaluate
-        dmatfiller Dmat;
-        
         HashMap_t& visited(*outArena.template allocConstruct<HashMap_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a Point -> Flowfield
-            //Can use the 'contains' method to check if a point is reachable from the startPoint
 
         arena.sublifetime_open();
         SG_PATHFIND_BFS(true, false);
@@ -95,20 +79,17 @@ export namespace SG_Pathfind::BFS {
         return visited;
     }
     
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true>//TODO make a default number for this in a config file
-    auto&  BFS_Dmatrix(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true>
+    auto& BFS_Dmatrix(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
         auto directions = SG_Pathfind::Utils::AvailableMoves<queensCase>();
         const SG_Grid::Point& endPoint_ = {0,0}; //Needs to be defined for the macro, even though we don't actually use it -> Blame how constexpr ifs evaluate
-        
-        auto& Dmat(*outArena.template allocConstruct<HashMap::GridRangeHashMap<OutputArenaType, SG_Grid::u_coordinate_t>>(outArena, OnGrid, startPoint, searchDistance));
-            //Can use the 'contains' method to check if a point is reachable from the startPoint
+        auto& visited(*outArena.template allocConstruct<HashMap::GridRangeHashMap<OutputArenaType, SG_Grid::u_coordinate_t>>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a distance -> Distance Matrix
 
         arena.sublifetime_open();
-        HashMap_t& visited(*outArena.template allocConstruct<HashMap_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a Point -> Flowfield
         SG_PATHFIND_BFS(true, true);
         arena.sublifetime_rollback();
-        return Dmat;
+        return visited;
     }
 }
 

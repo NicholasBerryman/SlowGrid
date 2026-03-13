@@ -13,11 +13,11 @@ import SG_Pathfind;
 
 #define BFS1_1 SG_Pathfind::BFS::BFS_Point<decltype(arena),decltype(arena), decltype(grid), SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena),SG_Grid::Point>, true>
 #define BFS2_1 SG_Pathfind::BFS::BFS_Flowfield<decltype(arena),decltype(arena), decltype(grid), SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena),SG_Grid::Point>, true>
-#define BFS3_1 SG_Pathfind::BFS::BFS_Dmatrix<decltype(arena),decltype(arena), decltype(grid), SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena),SG_Grid::Point>, true>
+#define BFS3_1 SG_Pathfind::BFS::BFS_Dmatrix<decltype(arena),decltype(arena), decltype(grid), true>
 
 #define BFS1_2 SG_Pathfind::BFS::BFS_Point<decltype(arena),decltype(arena), decltype(grid), SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena),SG_Grid::Point>, false>
 #define BFS2_2 SG_Pathfind::BFS::BFS_Flowfield<decltype(arena),decltype(arena), decltype(grid), SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena),SG_Grid::Point>, false>
-#define BFS3_2 SG_Pathfind::BFS::BFS_Dmatrix<decltype(arena),decltype(arena), decltype(grid), SG_Pathfind::HashMap::GridRangeHashMap<decltype(arena),SG_Grid::Point>, false>
+#define BFS3_2 SG_Pathfind::BFS::BFS_Dmatrix<decltype(arena),decltype(arena), decltype(grid), false>
 
 
 template <typename T>
