@@ -17,8 +17,6 @@ import :Utils;
 import :GridRangeHashMap;
 import :NoPriorityQueue;
 
-//TODO make some const grid get functions and use them to make OnGrid a const reference
-
 //TODO convert this into a function that uses references (in Utils.ixx)
 #define SG_PATHFIND_BFS(Flowfield, Distances) \
     PriorityQueue::NoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, true, false> frontier(arena, OnGrid, startPoint, searchDistance); \
@@ -64,7 +62,7 @@ struct dmatfiller{
 
 export namespace SG_Pathfind::BFS {
     template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true, const SG_Grid::u_coordinate_t maxOutputNodes = 256>//TODO make a default number for this in a config file
-    LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>&  BFS_Point(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+    LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>&  BFS_Point(const Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const SG_Grid::u_coordinate_t& searchDistance) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
         LOGGER_ASSERT_EXCEPT(endPoint.on(OnGrid));
         auto directions = Utils::AvailableMoves<queensCase>();

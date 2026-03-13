@@ -4,6 +4,7 @@
 module;
 #include "Logger.h"
 #include <cstring>
+#include <utility>
 
 export module SG_Grid:FullGrid;
 import :Point;
@@ -43,14 +44,17 @@ export namespace SG_Grid {
             height_var(height)
         { LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);}
 
-        inline T get(const Point& at) requires (isBitfield) {
+        inline T get(const Point& at) const requires (isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return (smartFind(at.x(),at.y()) >> (at.x()%8)) & 1;
         }
-        inline T& get(const Point& at) requires (!isBitfield) {
+        inline const T& get(const Point& at) const requires (!isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return smartFind(at.x(),at.y());
         }
+        inline T& get(const Point& at) requires (!isBitfield) { return const_cast<T &>(std::as_const(*this).get(at)); }
+
+
         inline void set(const Point& at, const T& value) requires (isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             if (value) smartFind(at.x(),at.y()) |= (1 << (at.x()%8));
@@ -77,9 +81,7 @@ export namespace SG_Grid {
             else std::memset(impl.impl(), toFill, height() * internalWidth(width()) * sizeof(internalT));
         }
 
-        template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) {
-            return *new (&get(at)) T(args...);
-        }
+        template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) { return *new (&get(at)) T(args...);  }
 
         [[nodiscard]] const u_coordinate_t& width() const { return width_var; }
         [[nodiscard]] const u_coordinate_t& height() const { return height_var; }
@@ -100,14 +102,18 @@ export namespace SG_Grid {
         [[no_unique_address]] std::conditional_t<is2Power, const u_coordinate_t, empty> widthMult;
         [[no_unique_address]] std::conditional_t<is2Power, const u_coordinate_t, empty> heightMult;
 
-        inline internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) requires (width_ > 0) { return impl[x][y]; }
-        inline internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) requires (width_ == 0) {
+        inline const internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) const requires (width_ > 0) { return impl[x][y]; }
+        inline const internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) const requires (width_ == 0) {
             if constexpr (!is2Power) return impl[x+y*internalWidth(width())];
             else                     return impl[x+(y<<widthMult)];
         }
+        inline internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) requires (width_ > 0) { return const_cast<internalT &>(std::as_const(*this).find(x,y)); }
+        inline internalT& find(const u_coordinate_t& x, const u_coordinate_t& y) requires (width_ == 0) { return const_cast<internalT &>(std::as_const(*this).find(x,y)); }
 
-        inline internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) requires (!isBitfield) { return find(x,y); }
-        inline internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) requires (isBitfield) { return find(x/8,y); }
+        inline const internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) const requires (!isBitfield) { return find(x,y); }
+        inline const internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) const requires (isBitfield) { return find(x/8,y); }
+        inline internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) requires (!isBitfield) { return const_cast<internalT &>(std::as_const(*this).smartFind(x,y)); }
+        inline internalT& smartFind(const u_coordinate_t& x, const u_coordinate_t& y) requires (isBitfield) { return const_cast<internalT &>(std::as_const(*this).smartFind(x,y)); }
 
         [[nodiscard]] static inline u_coordinate_t internalWidth(const u_coordinate_t& x) requires isBitfield { return x/8+(x%8 > 0); }
         [[nodiscard]] static inline const u_coordinate_t& internalWidth(const u_coordinate_t& x) requires (!isBitfield) { return x; }

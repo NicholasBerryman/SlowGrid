@@ -6,6 +6,7 @@ module;
 #include <initializer_list>
 #include <array>
 #include <type_traits>
+#include <utility>
 
 export module LocalDataStructures:Queue;
 import LocalDataStructureConfigs;
@@ -75,21 +76,20 @@ namespace LocalDataStructures {
              * @param skip Offset from front of queue. Default is 0 (FIFO)
              * @return Item at offset from front of queue
              */
-            inline auto peek(const Length_T& skip = 0) {
-                return peekRef(skip);
-            }
+            inline auto peek(const Length_T& skip = 0) const { return peekRef(skip); }
 
             /**
              * Return *reference to* item from front of queue with offset. Does not remove.
              * @param skip Offset from front of queue. Default is 0 (FIFO)
              * @return Item at offset from front of queue
              */
-            inline auto& peekRef(const Length_T& skip = 0) {
+            inline const auto& peekRef(const Length_T& skip = 0) const {
                 Length_T i = head + skip;
                 if (i >= implSiz()) i %= implSiz();
                 LOGGER_ASSERT_EXCEPT(i >= head || i < tail);
                 return impl[i];
             }
+            inline auto& peekRef(const Length_T& back = 0) {return const_cast<decltype(impl[0])&>(std::as_const(*this).peekRef(back));}
 
             /**
              * Returns and removes item from queue (LIFO)

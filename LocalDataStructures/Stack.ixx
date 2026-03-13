@@ -5,6 +5,7 @@ module;
 #include "Logger.h"
 #include <initializer_list>
 #include <array>
+#include <utility>
 
 export module LocalDataStructures:Stack;
 import LocalDataStructureConfigs;
@@ -43,14 +44,17 @@ namespace LocalDataStructures {
              * @param back Offset from end of stack. Default is 0 (LIFO)
              * @return Item at offset from end of stack
              */
-            inline auto& peekRef(const Length_T& back = 0) {LOGGER_ASSERT_EXCEPT(stackPointer >= 1+back); return impl[stackPointer-1-back];}
+            inline const auto& peekRef(const Length_T& back = 0) const {LOGGER_ASSERT_EXCEPT(stackPointer >= 1+back); return impl[stackPointer-1-back];}
+            inline auto& peekRef(const Length_T& back = 0) {return const_cast<decltype(impl[0])&>(std::as_const(*this).peekRef(back));}
 
             /**
              * Return *copy of* item from end of stack with offset. Does not remove.
              * @param back Offset from end of stack. Default is 0 (LIFO)
              * @return Item at offset from end of stack
              */
-            inline auto peek(const Length_T& back = 0) {return peekRef(back); }//TODO make a const correct version as well
+            inline auto peek(const Length_T& back = 0) const {return peekRef(back); }
+
+
 
             /**
              * Sets stack to empty state (does NOT call destructors)
