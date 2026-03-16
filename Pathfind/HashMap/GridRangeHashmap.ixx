@@ -23,8 +23,6 @@ const SG_Grid::u_coordinate_t& min(const SG_Grid::u_coordinate_t& a, const SG_Gr
     return b;
 }
 
-//TODO allow this HashMap to use a refernce to another HashMap's 'containsGrid'
-    // Or maybe make it possible to create without a 'containtsGrid', but still without zero-initialising the 'get Grid' -> Can then manually use the other set as the containsGrid
 
 export namespace SG_Pathfind::HashMap {
     template<typename insideArena_t, typename value_t = bool, bool useContains=true, bool useBitfield=true, uint8_t partitionContains=0, uint8_t partitionGet=0, bool is2Power = false>
@@ -111,7 +109,7 @@ export namespace SG_Pathfind::HashMap {
 
         SG_Grid::Point origin;
 
-        std::conditional_t<useContains_,
+        [[no_unique_address]] std::conditional_t<useContains_,
             std::conditional_t<partitionContains == 0, containsGrid_t, SG_Grid::SparseRuntimeGrid<insideArena_t,containsGrid_t>>,
             empty
         > containsGrid;

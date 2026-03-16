@@ -15,7 +15,7 @@ export import :STDHashMap;
 export import :STDPriorityQueue;
 
 export import :NoPriorityQueue;
-//export import :STDNoPriorityQueue;
+export import :STDNoPriorityQueue;
 
 import LocalDataStructures;
 export import :Utils;

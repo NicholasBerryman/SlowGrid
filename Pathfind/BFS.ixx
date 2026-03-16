@@ -15,13 +15,16 @@ import SG_Allocator;
 import SG_Grid;
 import :Utils;
 import :GridRangeHashMap;
+import :STDHashMap;
 import :NoPriorityQueue;
+import :STDNoPriorityQueue;
 
-//TODO convert this into a function that uses references (in Utils.ixx)
+//TODO convert this into a function that uses references (in Utils.ixx, maybe??)
 #define SG_PATHFIND_BFS(Flowfield, Distances) \
-    PriorityQueue::NoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, false, false> frontier(arena, OnGrid, startPoint, searchDistance); \
+    typedef std::conditional_t<useSTD, PriorityQueue::STDNoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, false, false>, PriorityQueue::NoPriorityQueue<WorkingArenaType, Grid_t, queensCase, !Distances, false, false>> queue_t; \
+    queue_t frontier(arena, OnGrid, startPoint, searchDistance); \
     if constexpr (Distances) visited.insert(startPoint, 0); \
-    frontier.insert(startPoint); \
+    frontier.insert(startPoint,0,true); \
     SG_Grid::Point examine = startPoint; \
     if constexpr (!Distances) visited.insert(startPoint, startPoint); \
     else visited.insert(startPoint, 0); \
@@ -37,7 +40,7 @@ import :NoPriorityQueue;
             if (OnGrid.get(next)) { /* Not a wall (0 = wall)*/ \
                 bool alreadyChecked;  \
                 if (!visited.contains(next)) { \
-                    frontier.insert(next); \
+                    frontier.insert(next,0,true); \
                     if constexpr (Distances) visited.insert(next, nextDistance); \
                     else visited.insert(next, directions.peekRef(i)); \
                 } \
@@ -49,28 +52,32 @@ import :NoPriorityQueue;
     found: /* The last remaining use for goto :) */
 
 export namespace SG_Pathfind::BFS {
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true, const SG_Grid::u_coordinate_t maxOutputNodes = 256>//TODO make a default number for this in a config file
+    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true, const SG_Grid::u_coordinate_t maxOutputNodes = 256, bool useSTD = false> //TODO make a default number for maxOutputNodes in a config file
     LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>&  BFS_Point(const Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const SG_Grid::u_coordinate_t& searchDistance) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
         LOGGER_ASSERT_EXCEPT(endPoint.on(OnGrid));
+        typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::Point>> visited_t;
+
         auto directions = Utils::AvailableMoves<queensCase>();
         auto& out(*(outArena.template allocConstruct<LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>>()));
         const auto& endPoint_(endPoint); //Needs to be defined for the macro, even though we don't actually use it -> Blame how constexpr ifs evaluate
 
         arena.sublifetime_open();
-        HashMap_t visited(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
+        visited_t visited(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
         SG_PATHFIND_BFS(false, false);
         Utils::FlowfieldToPath(out, examine, startPoint, endPoint, visited);
         arena.sublifetime_rollback();
         return out;
     }
     
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, typename HashMap_t, bool queensCase = true>
-    HashMap_t&  BFS_Flowfield(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true, bool useSTD = false>
+    auto&  BFS_Flowfield(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
-        auto directions = SG_Pathfind::Utils::AvailableMoves<queensCase>();
+        typedef std::conditional_t<useSTD, HashMap::STDHashMap<OutputArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<OutputArenaType,SG_Grid::Point>> visited_t;
+
+        auto directions = Utils::AvailableMoves<queensCase>();
         const SG_Grid::Point& endPoint_ = {0,0}; //Needs to be defined for the macro, even though we don't actually use it -> Blame how constexpr ifs evaluate
-        HashMap_t& visited(*outArena.template allocConstruct<HashMap_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a Point -> Flowfield
+        auto& visited(*outArena.template allocConstruct<visited_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a Point (x/y direction) -> Flowfield
 
         arena.sublifetime_open();
         SG_PATHFIND_BFS(true, false);
@@ -79,12 +86,14 @@ export namespace SG_Pathfind::BFS {
         return visited;
     }
     
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true>
+    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true, bool useSTD = false>
     auto& BFS_Dmatrix(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
-        auto directions = SG_Pathfind::Utils::AvailableMoves<queensCase>();
+        typedef std::conditional_t<useSTD, HashMap::STDHashMap<OutputArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<OutputArenaType,SG_Grid::u_coordinate_t>> visited_t;
+
+        auto directions = Utils::AvailableMoves<queensCase>();
         const SG_Grid::Point& endPoint_ = {0,0}; //Needs to be defined for the macro, even though we don't actually use it -> Blame how constexpr ifs evaluate
-        auto& visited(*outArena.template allocConstruct<HashMap::GridRangeHashMap<OutputArenaType, SG_Grid::u_coordinate_t>>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a distance -> Distance Matrix
+        auto& visited(*outArena.template allocConstruct<visited_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a distance -> Distance Matrix
 
         arena.sublifetime_open();
         SG_PATHFIND_BFS(true, true);

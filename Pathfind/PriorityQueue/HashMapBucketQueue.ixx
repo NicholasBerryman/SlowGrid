@@ -32,12 +32,14 @@ export namespace SG_Pathfind::PriorityQueue {
         return out;
     }
 
-    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_ ) {
+    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_, bool force = false ) {
         auto priority = queue.encodePriority(priority_);
         if constexpr (noHashSet) queue.insert(tile, priority);
         else {
-            //TODO add logic for useContains (must be able to handle cases where it doesn't exist, and cases where it need decrease-key)
-            if (!hashMap.contains(tile)) {
+            bool toInsert;
+            if constexpr (!useContains) {toInsert = force;}
+            else toInsert = force || !hashMap.contains(tile);
+            if (toInsert) {
                 hashMap.insert(tile, {queue.forceInsert(tile, priority), priority});
                 return;
             }

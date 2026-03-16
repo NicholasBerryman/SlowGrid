@@ -28,18 +28,19 @@ export namespace SG_Pathfind::PriorityQueue {
             hashMap(arena, within, centrePoint, maxDistance),
             swap(false) {}
 
-        inline SG_Grid::Point valueAt(const SG_Grid::u_coordinate_t& priority) {
+        inline const SG_Grid::Point& valueAt(const SG_Grid::u_coordinate_t& priority) {
             if constexpr (doubleBuffer) {
                 auto& q = !swap ? queue : queue2;
-                return q.peek(priority);
+                return q.peekRef(priority);
             }
-            return queue.peek(priority);
+            return queue.peekRef(priority);
         }
 
         static inline SG_Grid::u_coordinate_t findMin() {
             return 0;
         }
-        inline SG_Grid::u_coordinate_t length() const {
+
+        [[nodiscard]] inline SG_Grid::u_coordinate_t length() const {
             if constexpr (doubleBuffer) {
                 auto& q = !swap ? queue : queue2;
                 return q.length();
@@ -47,7 +48,7 @@ export namespace SG_Pathfind::PriorityQueue {
             return queue.length();
         }
 
-        inline SG_Grid::Point extractMin() {
+        inline const SG_Grid::Point& extractMin() {
             if constexpr (doubleBuffer) {
                 auto& q = !swap ? queue : queue2;
                 return q.pop();
@@ -55,10 +56,13 @@ export namespace SG_Pathfind::PriorityQueue {
             return queue.pop();
         }
 
-        inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority = 0) {
+        inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority = 0, bool force = false) {
             if constexpr (noHashSet)  {if (queueContains(tile)) return;}
             else {
-                if constexpr (useContains) if (hashMap.contains(tile)) return;
+                bool toInsert;
+                if constexpr (!useContains) {toInsert = force;}
+                else toInsert = force || !hashMap.contains(tile);
+                if (!toInsert) return;
                 hashMap.insert(tile);
             }
 
@@ -95,7 +99,7 @@ export namespace SG_Pathfind::PriorityQueue {
                 empty(bool){}
             };
 
-            bool queueContains(const SG_Grid::Point& p){ for (auto i = 0; i < queue.length(); ++i){if (queue.peek(i) == p) return true; }; return false; }
+            [[nodiscard]] bool queueContains(const SG_Grid::Point& p) const { for (auto i = 0; i < queue.length(); ++i){if (queue.peek(i) == p) return true; }; return false; }
             [[no_unique_address]] std::conditional_t<doubleBuffer, decltype(queue), empty> queue2;
 
             [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, bool, useContains, useBitfield>>  hashMap;

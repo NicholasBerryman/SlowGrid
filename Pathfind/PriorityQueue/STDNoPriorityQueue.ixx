@@ -19,110 +19,98 @@ import :STDHashMap;
 
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
-    class STDPriorityQueue {
+    template<typename InsideArenaType, typename pathfindGrid_t, bool queensCase = true, bool doubleBuffer = true, bool useContains = true,  bool useBitfield = false, bool noHashSet = false>
+    class STDNoPriorityQueue {
     public:
-        STDPriorityQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
-            queue(), 
-            hashMap(arena, within, centrePoint, maxDistanceChebyshev),
-            counter(0) {}
-    
-    inline SG_Grid::Point valueAt(const SG_Grid::u_coordinate_t& priority) {
-        return queue.find(priority);
-    }
-    inline SG_Grid::u_coordinate_t findMin() { 
-        return queue.top().priority;
-    }
-    inline SG_Grid::u_coordinate_t length() {
-        return queue.size();
-    }
+        static SG_Grid::u_coordinate_t maxQueueSize(const SG_Grid::u_coordinate_t& maxDistance) {
+            if constexpr (queensCase) return 8*maxDistance+1; //extra plus one is a queue requirement
+            return 4*maxDistance+1; //extra plus one is a queue requirement
+        }
 
-    inline SG_Grid::Point extractMin() {
-        auto out = queue.top().val;
-        queue.pop();
-        return out;
-    }
+        STDNoPriorityQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistance, const SG_Grid::coordinate_t& maxCost = 0, const SG_Grid::coordinate_t& minCost = 0) :
+            queue(),
+            queue2(),
+            hashMap(arena, within, centrePoint, maxDistance),
+            swap(false) {}
 
-    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority ) {
-        ++counter;
-        if constexpr (noHashSet) queue.smartInsert(tile, priority, counter);
-        else {
-            if (!hashMap.contains(tile)) {
-                queue.smartInsert(tile, priority, counter);
-                hashMap.insert(tile, priority);
+        inline SG_Grid::Point valueAt(const SG_Grid::u_coordinate_t& priority) {
+            if constexpr (doubleBuffer) {
+                auto& q = !swap ? queue : queue2;
+                return q[priority];
+            }
+            return queue[priority];
+        }
+
+        static inline SG_Grid::u_coordinate_t findMin() {
+            return 0;
+        }
+        inline SG_Grid::u_coordinate_t length() const {
+            if constexpr (doubleBuffer) {
+                auto& q = !swap ? queue : queue2;
+                return q.size();
+            }
+            return queue.size();
+        }
+
+        inline SG_Grid::Point extractMin() {
+            if constexpr (doubleBuffer) {
+                auto& q = !swap ? queue : queue2;
+                auto out = q.front();
+                q.pop_front();
+                return out;
+            }
+            auto out = queue.front();
+            queue.pop_front();
+            return out;
+        }
+
+        inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority = 0, bool force = false) {
+            if constexpr (noHashSet)  {if (queueContains(tile)) return;}
+            else {
+                bool toInsert;
+                if constexpr (!useContains) {toInsert = force;}
+                else toInsert = force || !hashMap.contains(tile);
+                if (!toInsert) return;
+                hashMap.insert(tile);
+            }
+
+            if constexpr (doubleBuffer) {
+                auto& q = !swap ? queue2 : queue;
+                q.push_back(tile);
                 return;
             }
-            if constexpr (uniformCost) return;
-            SG_Grid::u_coordinate_t toCheck = hashMap.get(tile);
-            if (toCheck <= priority) return;
-            queue.smartInsert(tile, priority, counter); //Automatically handles decreaseKey
+            queue.push_back(tile);
         }
-    }
 
-    inline void clear() {
-        while (!queue.empty()) queue.pop();
-    }
-    
-    private:
-        struct empty{};
-        struct node{
-            SG_Grid::Point val;
-            SG_Grid::u_coordinate_t priority;
-            SG_Grid::u_coordinate_t tiebreak;
-            
-            bool operator<(const node& other) const { 
-                if constexpr (fifoOnTie)  if (priority == other.priority) return tiebreak > other.tiebreak;
-                if constexpr (!fifoOnTie) if (priority == other.priority) return tiebreak < other.tiebreak;
-                return priority < other.priority; 
+        inline void clear() {
+            if constexpr (doubleBuffer) {
+                auto& q = !swap ? queue : queue2;
+                while (!q.empty()) q.pop_front();
+                return;
             }
-            bool operator>(const node& other) const { 
-                if constexpr (fifoOnTie)  if (priority == other.priority) return tiebreak < other.tiebreak;
-                if constexpr (!fifoOnTie) if (priority == other.priority) return tiebreak > other.tiebreak;
-                return priority > other.priority; 
-            }
-        };
-        
-        class q_t : public std::priority_queue<node, std::vector<node>, std::greater<node>>{
-            public:
-            SG_Grid::Point find(const SG_Grid::u_coordinate_t& val) const {
-                auto first = this->c.cbegin();
-                auto last = this->c.cend();
-                while (first!=last) {
-                    if (first->priority == val) return first->val;
-                    ++first;
-                }
-                return last->val;
-            }
-            bool remove(const SG_Grid::Point& value) {
-                auto it = this->c.cbegin();
-                auto last = this->c.cend();
-                while (it!=last) {
-                    if (it->val == value) break;
-                    ++it;
-                }
-                if (it == this->c.end()) {
-                    return false;
-                }
-                if (it == this->c.begin()) {
-                    // deque the top element
-                    this->pop();
-                }    
-                else {
-                    // remove element and re-heap
-                    this->c.erase(it);
-                    std::make_heap(this->c.begin(), this->c.end(), this->comp);
-                }
-                return true;
-            }
-            
-            void smartInsert(const SG_Grid::Point& value, const SG_Grid::u_coordinate_t& priority, const SG_Grid::u_coordinate_t& tiebreak){
-                if constexpr (fullDecreaseKey) remove(value);
-                this->push({value, priority, tiebreak});
-            }
-        };
+            while (!queue.empty()) queue.pop_front();
+        }
 
-        q_t queue;
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::STDHashMap<InsideArenaType, SG_Grid::u_coordinate_t>>  hashMap;
-        SG_Grid::u_coordinate_t counter;
+        inline bool trySwap() {
+            if constexpr (!doubleBuffer) { return false; }
+            else {
+                if (!swap && queue.size() == 0) {swap = true; return true;}
+                if (swap && queue2.size() == 0) {swap = false; return true;}
+                return false;
+            }
+        }
+
+        private:
+            std::deque<SG_Grid::Point> queue;
+            struct empty {
+                empty(bool){}
+                empty(){}
+            };
+
+            [[nodiscard]] bool queueContains(const SG_Grid::Point& p) const { for (auto i = 0; i < queue.size(); ++i){if (queue[i] == p) return true; }; return false; }
+            [[no_unique_address]] std::conditional_t<doubleBuffer, decltype(queue), empty> queue2;
+
+            [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::STDHashMap<InsideArenaType, bool, useContains, useBitfield>>  hashMap;
+            [[no_unique_address]] std::conditional_t<doubleBuffer, bool, empty> swap;
     };
 }
