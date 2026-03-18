@@ -7,6 +7,7 @@ module;
 #include <type_traits>
 #include "Logger.h"
 #include <cstdint>
+#include <utility>
 
 export module SG_Pathfind:GridRangeHashMap;
 import :BaseHashMap;
@@ -70,15 +71,16 @@ export namespace SG_Pathfind::HashMap {
             getGrid.set(calcHash(key),val);
         }
 
-        inline bool contains(const SG_Grid::Point& key ) requires (useContains_) {
+        [[nodiscard]] inline bool contains(const SG_Grid::Point& key ) const requires (useContains_) {
             if constexpr (useContains_ && partitionContains > 0) if (!containsChunkLoaded.get(containsGrid.chunkLocation(calcHash(key)))) return false;
             return containsGrid.get(calcHash(key));
         }
 
-        inline value_t& get(const SG_Grid::Point& key ) requires (!(std::is_same_v<value_t, bool>)) {
+        [[nodiscard]] inline const value_t& get(const SG_Grid::Point& key ) const requires (!(std::is_same_v<value_t, bool>)){
             if constexpr (partitionGet_ > 0) LOGGER_ASSERT_EXCEPT(getChunkLoaded.get(getGrid.chunkLocation(calcHash(key))));
             return getGrid.get(calcHash(key));
         }
+        [[nodiscard]] inline value_t& get(const SG_Grid::Point& key ) requires (!(std::is_same_v<value_t, bool>)) { return const_cast<value_t&>(std::as_const(*this).get(key)); }
 
         inline void remove(const SG_Grid::Point& key ) { if constexpr (useContains_) containsGrid.set(calcHash(key), 0); }
         

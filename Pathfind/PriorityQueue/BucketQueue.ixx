@@ -12,6 +12,8 @@ import Logger;
 import SG_Grid;
 import SG_Allocator;
 
+
+//TODO make const correct, along with the other priority queues
 //TODO double-check that A* with an admissible heuristic still satisfies the 'monotonic increasing' assumption that this uses here
 //TODO Maybe completely refactor BucketQueue to use only a single LinkedList with a ULL of void* for bucket locations, instead of the ULL of LLs ????
     // Use only one LinkedList -> Reduces initialisation burden and wasted memory, especially for non-uniform-cost grids

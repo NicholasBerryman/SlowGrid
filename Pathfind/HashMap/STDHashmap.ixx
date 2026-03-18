@@ -8,6 +8,7 @@ module;
 #include "Logger.h"
 #include <cstdint>
 #include <unordered_map>
+#include <utility>
 
 export module SG_Pathfind:STDHashMap;
 import :BaseHashMap;
@@ -31,13 +32,14 @@ export namespace SG_Pathfind::HashMap {
             map[calcHash(key)] = val;
         }
 
-        inline bool contains(const SG_Grid::Point& key ) {
-            return(map.find(calcHash(key)) != map.end());
+        [[nodiscard]] inline bool contains(const SG_Grid::Point& key ) const {
+            return(map.contains(calcHash(key)));
         }
 
-        inline value_t& get(const SG_Grid::Point& key ) requires (!(std::is_same_v<value_t, bool>)) {
+        inline const value_t& get(const SG_Grid::Point& key ) const requires (!(std::is_same_v<value_t, bool>)) {
             return(map.find(calcHash(key))->second);
         }
+        inline value_t& get(const SG_Grid::Point& key ) requires (!(std::is_same_v<value_t, bool>)) { return const_cast<value_t &>(std::as_const(*this).get(key)); }
 
         inline void remove(const SG_Grid::Point& key ) { 
             map.erase(calcHash(key));

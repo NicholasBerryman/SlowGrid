@@ -27,18 +27,18 @@ export namespace SG_Pathfind::Utils {
         { 0, 1},
         {-1, 0}
     });
-    template <bool QueensCase> auto& AvailableMoves(){ if constexpr (QueensCase) return QueenMoves; else return RookMoves; } //TODO make stack const correct so that this can return a const refrence
+    template <bool QueensCase> const auto& AvailableMoves(){ if constexpr (QueensCase) return QueenMoves; else return RookMoves; }
 
-
-    //TODO add const correct methods for HashMap types
-    template <typename HashMap_t, typename Out_t>
-    inline auto FlowfieldToPath(Out_t& out, const SG_Grid::Point& examine, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, HashMap_t& visited){
+    //TODO add some string-pulling logic, so we can get nicer paths esp in QueensCase
+    template <typename HashMap_t, typename Out_t, const SG_Grid::u_coordinate_t maxOutputNodes = 256>
+    inline auto FlowfieldToPath(Out_t& out, const SG_Grid::Point& examine, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const HashMap_t& visited){
         if (examine == endPoint){ // Only return a path if we found one
             auto trace = endPoint;
             auto dir = SG_Grid::Point(0,0);
             while (trace != startPoint){
                 auto newDir = visited.get(trace);
                 if (dir != newDir){ out.push(trace); dir = newDir; } //Only add to output stack if it's a corner node
+                if (out.length() == maxOutputNodes) return;
                 trace = trace - newDir;
             }
         }
