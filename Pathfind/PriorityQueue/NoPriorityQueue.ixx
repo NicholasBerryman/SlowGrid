@@ -57,7 +57,7 @@ export namespace SG_Pathfind::PriorityQueue {
         }
 
         inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority = 0, bool force = false) {
-            if constexpr (noHashSet)  {if (queueContains(tile)) return;}
+            if constexpr (noHashSet) { if constexpr (useContains) if (queueContains(tile)) return; }
             else {
                 bool toInsert;
                 if constexpr (!useContains) {toInsert = force;}
@@ -95,7 +95,8 @@ export namespace SG_Pathfind::PriorityQueue {
         private:
             LocalDataStructures::Base::Queue<SG_Allocator::RuntimeArray<SG_Grid::Point, SG_Grid::u_coordinate_t>, SG_Grid::u_coordinate_t> queue;
             struct empty {
-                empty(const SG_Grid::u_coordinate_t&, const InsideArenaType&, const SG_Grid::u_coordinate_t&){}
+                empty(const auto&, const auto&, const auto&){}
+                empty(const auto&, const auto&, const auto&, const auto&){}
                 empty(bool){}
             };
 

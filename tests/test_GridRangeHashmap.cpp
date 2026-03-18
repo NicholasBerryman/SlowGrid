@@ -50,7 +50,7 @@ void testOnStack(){
     hash.remove(SG_Grid::Point(2,2));
     assert(!hash.contains(SG_Grid::Point(2,2)));
 
-    LOGGER_ASSERT_ERROR( hash.contains(SG_Grid::Point(1,2)) == false; )
+    LOGGER_ASSERT_ERROR( (void) (hash.contains(SG_Grid::Point(1,2)) == false); )
     LOGGER_ASSERT_ERROR( auto x = hash.calcHash(SG_Grid::Point(5,9)); )
 }
 
@@ -79,7 +79,7 @@ void testBitfield(){
     hash.remove(SG_Grid::Point(2,2));
     assert(!hash.contains(SG_Grid::Point(2,2)));
 
-    LOGGER_ASSERT_ERROR( hash.contains(SG_Grid::Point(1,2)) == false; )
+    LOGGER_ASSERT_ERROR( (void) (hash.contains(SG_Grid::Point(1,2)) == false); )
     LOGGER_ASSERT_ERROR( auto x = hash.calcHash(SG_Grid::Point(5,9)); )
 }
 
@@ -120,7 +120,7 @@ void testContainsPartitioned(){
     hash.remove(SG_Grid::Point(2,2));
     assert(!hash.contains(SG_Grid::Point(2,2)));
 
-    LOGGER_ASSERT_ERROR( hash.contains(SG_Grid::Point(1,2)) == false; )
+    LOGGER_ASSERT_ERROR( (void) (hash.contains(SG_Grid::Point(1,2)) == false); )
     LOGGER_ASSERT_ERROR( auto x = hash.calcHash(SG_Grid::Point(5,9)); )
 }
 
@@ -161,7 +161,7 @@ void testGetPartitioned(){
     hash.remove(SG_Grid::Point(2,2));
     assert(!hash.contains(SG_Grid::Point(2,2)));
 
-    LOGGER_ASSERT_ERROR( hash.contains(SG_Grid::Point(1,2)) == false; )
+    LOGGER_ASSERT_ERROR( (void) (hash.contains(SG_Grid::Point(1,2)) == false); )
     LOGGER_ASSERT_ERROR( auto x = hash.calcHash(SG_Grid::Point(5,9)); )
 }
 
@@ -199,8 +199,6 @@ void testGridEdge(){
     LOGGER_ASSERT_ERROR( hash3.insert({12,5}, 18); )
     LOGGER_ASSERT_ERROR( hash3.insert({7,5}, 19); )
 }
-
-
 
 int main(int, char**) {
     testOnStack<bool>();

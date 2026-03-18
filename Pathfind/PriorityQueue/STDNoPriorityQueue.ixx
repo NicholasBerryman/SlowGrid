@@ -65,7 +65,7 @@ export namespace SG_Pathfind::PriorityQueue {
         }
 
         inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority = 0, bool force = false) {
-            if constexpr (noHashSet)  {if (queueContains(tile)) return;}
+            if constexpr (noHashSet)  {if constexpr (useContains) if (queueContains(tile)) return;}
             else {
                 bool toInsert;
                 if constexpr (!useContains) {toInsert = force;}
@@ -104,6 +104,7 @@ export namespace SG_Pathfind::PriorityQueue {
             std::deque<SG_Grid::Point> queue;
             struct empty {
                 empty(bool){}
+                empty(const auto&, const auto&, const auto&, const auto&){}
                 empty(){}
             };
 
