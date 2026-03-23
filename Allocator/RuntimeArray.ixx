@@ -42,11 +42,11 @@ export namespace SG_Allocator {
             const T& get(size_T i) const {
                 LOGGER_ASSERT_EXCEPT(i >= 0 && i < maxSize_);
                 return impl_[i];
-                }
+            }
             T& get(size_T i){
                 LOGGER_ASSERT_EXCEPT(i >= 0 && i < maxSize_);
                 return impl_[i];
-                }
+            }
 
             T* impl() {return impl_;}
 

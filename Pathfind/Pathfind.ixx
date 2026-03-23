@@ -20,4 +20,5 @@ export import :STDNoPriorityQueue;
 import LocalDataStructures;
 export import :Utils;
 export import :BFS;
+export import :AStar;
 

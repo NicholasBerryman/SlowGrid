@@ -18,5 +18,6 @@ target_sources(SG_Pathfind
                 HashMap/STDHashmap.ixx
 				Utils.ixx
                 BFS.ixx
+				AStar.ixx
 )
 target_link_libraries(SG_Pathfind PRIVATE Logger LocalDataStructures SG_Allocator SG_Grid )

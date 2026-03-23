@@ -31,7 +31,7 @@ void testOnStack(){
     LOGGER_ASSERT_ERROR( q.valueAt(2); )
     assert(q.findMin() == 1);
     
-    q.insert({7,7}, 4); //Wow this makes Points a lot more readable. I think it's a c++11 feature?
+    q.insert({7,7}, 4, 3); //Wow this makes Points a lot more readable. I think it's a c++11 feature?
     assert(q.valueAt(1,1) == SG_Grid::Point(6,6));
     assert(q.valueAt(1)   == SG_Grid::Point(6,5));
     assert(q.valueAt(3)   == SG_Grid::Point(7,7));
@@ -39,7 +39,7 @@ void testOnStack(){
     LOGGER_ASSERT_ERROR( q.valueAt(3,1); )
     LOGGER_ASSERT_ERROR( q.valueAt(2); )
     
-    q.insert({7,7}, 3);
+    q.insert({7,7}, 3, 3);
     assert(q.valueAt(1,1) == SG_Grid::Point(6,6));
     assert(q.valueAt(1)   == SG_Grid::Point(6,5));
     assert(q.valueAt(3)   == SG_Grid::Point(7,7));
@@ -47,7 +47,7 @@ void testOnStack(){
     LOGGER_ASSERT_ERROR( q.valueAt(3,1); )
     LOGGER_ASSERT_ERROR( q.valueAt(2); )
     
-    q.insert({7,7}, 2);
+    q.insert({7,7}, 2, 3);
     assert(q.valueAt(1,1) == SG_Grid::Point(6,6));
     assert(q.valueAt(1)   == SG_Grid::Point(6,5));
     assert(q.valueAt(2)   == SG_Grid::Point(7,7));

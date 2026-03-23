@@ -19,7 +19,7 @@ import :STDHashMap;
 
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool noHashSet = false>
     class STDPriorityQueue {
     public:
         STDPriorityQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
@@ -40,22 +40,25 @@ export namespace SG_Pathfind::PriorityQueue {
     inline SG_Grid::Point extractMin() {
         auto out = queue.top().val;
         queue.pop();
+        if constexpr (!noHashSet) hashMap.remove(out);
         return out;
     }
     
-    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority ) {
+    inline bool insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority, const SG_Grid::u_coordinate_t& lastPriority = 0) {
+        if (lastPriority <= priority && lastPriority > 0) return false; // Already visited & visited better -> skip
         ++counter;
-        if constexpr (noHashSet) queue.smartInsert(tile, priority, counter);
+        if constexpr (noHashSet) {
+            queue.smartInsert(tile, priority, counter);
+            return true;
+        }
         else {
-            if (!hashMap.contains(tile)) {
-                queue.smartInsert(tile, priority, counter);
-                hashMap.insert(tile, priority);
-                return;
+            if (lastPriority == 0 || !hashMap.contains(tile)) {
+                queue.push({tile, priority, counter});
+                hashMap.insert(tile);
+                return true;
             }
-            if constexpr (uniformCost) return;
-            SG_Grid::u_coordinate_t toCheck = hashMap.get(tile);
-            if (toCheck <= priority) return;
             queue.smartInsert(tile, priority, counter); //Automatically handles decreaseKey
+            return true;
         }
     }
     
@@ -64,7 +67,9 @@ export namespace SG_Pathfind::PriorityQueue {
     }
     
     private:
-        struct empty{};
+        struct empty{
+            empty(const auto&, const auto&, const auto&, const auto&) {}
+        };
         struct node{
             SG_Grid::Point val;
             SG_Grid::u_coordinate_t priority;
@@ -84,7 +89,7 @@ export namespace SG_Pathfind::PriorityQueue {
         
         class q_t : public std::priority_queue<node, std::vector<node>, std::greater<node>>{
             public:
-            SG_Grid::Point find(const SG_Grid::u_coordinate_t& val) const {
+            [[nodiscard]] SG_Grid::Point find(const SG_Grid::u_coordinate_t& val) const {
                 auto first = this->c.cbegin();
                 auto last = this->c.cend();
                 while (first!=last) {
@@ -100,13 +105,8 @@ export namespace SG_Pathfind::PriorityQueue {
                     if (it->val == value) break;
                     ++it;
                 }
-                if (it == this->c.end()) {
-                    return false;
-                }
-                if (it == this->c.begin()) {
-                    // deque the top element
-                    this->pop();
-                }    
+                if (it == this->c.end())  return false;
+                if (it == this->c.begin()) this->pop();
                 else {
                     // remove element and re-heap
                     this->c.erase(it);
@@ -115,14 +115,14 @@ export namespace SG_Pathfind::PriorityQueue {
                 return true;
             }
             
-            void smartInsert(const SG_Grid::Point& value, const SG_Grid::u_coordinate_t& priority, const SG_Grid::u_coordinate_t& tiebreak){
+            void smartInsert(const SG_Grid::Point& value, const SG_Grid::u_coordinate_t& priority, const SG_Grid::u_coordinate_t& tiebreak) {
                 if constexpr (fullDecreaseKey) remove(value);
                 this->push({value, priority, tiebreak});
             }
         };
 
         q_t queue;
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::STDHashMap<InsideArenaType, SG_Grid::u_coordinate_t>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::STDHashMap<InsideArenaType, bool>>  hashMap;
         SG_Grid::u_coordinate_t counter;
     };
 }

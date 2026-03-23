@@ -8,9 +8,8 @@ export module SG_Pathfind:Utils;
 import LocalDataStructures;
 import SG_Grid;
 
-//TODO make some const grid get functions and use them to make OnGrid a const reference
-
 export namespace SG_Pathfind::Utils {
+    //TODO probably prioritise horizontal movement first (reduces weird movement for queen's case) -> might need to update unit tests to account
     LocalDataStructures::Stack<SG_Grid::Point,8> QueenMoves({
         { 0,-1},
         { 1, 0},
@@ -31,11 +30,11 @@ export namespace SG_Pathfind::Utils {
 
     //TODO add some string-pulling logic, so we can get nicer paths esp in QueensCase
     template <typename HashMap_t, typename Out_t, const SG_Grid::u_coordinate_t maxOutputNodes = 256>
-    inline auto FlowfieldToPath(Out_t& out, const SG_Grid::Point& examine, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const HashMap_t& visited){
+    auto FlowfieldToPath(Out_t& out, const SG_Grid::Point& examine, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const HashMap_t& visited){
         if (examine == endPoint){ // Only return a path if we found one
             auto trace = endPoint;
             auto dir = SG_Grid::Point(0,0);
-            while (trace != startPoint){
+            while (trace != startPoint && out.length() < maxOutputNodes){
                 auto newDir = visited.get(trace);
                 if (dir != newDir){ out.push(trace); dir = newDir; } //Only add to output stack if it's a corner node
                 if (out.length() == maxOutputNodes) return;
@@ -43,4 +42,6 @@ export namespace SG_Pathfind::Utils {
             }
         }
     }
+
+    //TODO add a 'threatMatrix' function based on a min/max distance matrix and a 'blocker' matrix -> return a new grid showing distance to put tiles within that range without hitting a 'blocker' -> e.g. calculating Fire Emblem archer movement
 }

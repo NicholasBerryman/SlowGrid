@@ -41,18 +41,23 @@ export namespace SG_Pathfind::PriorityQueue {
                 if constexpr (fifoOnTie) ++counter;
             }
 
-            inline void insert(const T& value, const priority_t& priority) {
-                for (auto i = 0; i < heap.length(); ++i) {
-                    if (heap.get(i).value == value) {
-                        if constexpr (fullDecreaseKey) {
-                            if (priority <= heap.get(i).priority) decreaseKey(i, priority);
-                            return;
+            inline bool insert(const T& value, const priority_t& priority, const SG_Grid::u_coordinate_t& lastPriority = 0) {
+                if (lastPriority <= priority && lastPriority > 0) return false; // Already visited & visited better -> skip
+                if (lastPriority == 0) { //Not visited -> insert
+                    forceInsert(value, priority);
+                    return true;
+                }
+                if constexpr (fullDecreaseKey) {
+                    for (auto i = 0; i < heap.length(); ++i) {
+                        if (heap.get(i).value == value) {
+                            auto dec_k = priority <= heap.get(i).priority;
+                            if (dec_k) decreaseKey(i, priority);
+                            return dec_k;
                         }
-                        if (heap.get(i).priority <= priority)
-                            return;
                     }
                 }
                 forceInsert(value, priority);
+                return true;
             }
 
             inline const priority_t& findMin() const {
@@ -108,7 +113,6 @@ export namespace SG_Pathfind::PriorityQueue {
             };
             SG_Allocator::ULL2<InsideArenaType, Node> heap;
             [[no_unique_address]] std::conditional_t<fifoOnTie, priority_t, empty> counter;
-
 
             static inline SG_Allocator::arenaSize_t parent(const SG_Allocator::arenaSize_t& index) { return (index - 1) / 2; }
             static inline SG_Allocator::arenaSize_t leftChild(const SG_Allocator::arenaSize_t& index) { return (2 * index + 1); }

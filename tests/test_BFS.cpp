@@ -71,7 +71,7 @@ void testRook(){
 }
 
 int main(int, char**) {
-    testQueen<bool, false>(); //TODO make it template on different optimisation parameters etc
+    testQueen<bool, false>();
     testRook<bool, false>();
     testRook<bool, true>();
     testQueen<bool, true>();

@@ -13,9 +13,8 @@ import SG_Allocator;
 import :GridRangeHashMap;
 import :BucketQueue;
 
-
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool useContains = true, bool fullDecreaseKey = true, bool fifoOnTie = true, bool uniformCost = false, bool useBitfield = false, bool noHashSet = false>
+    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = false, bool noHashSet = false>
     class HashMapBucketQueue {
     public:
         HashMapBucketQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
@@ -27,27 +26,25 @@ export namespace SG_Pathfind::PriorityQueue {
     inline const SG_Grid::u_coordinate_t& length() {  return queue.length(); }
 
     inline SG_Grid::Point extractMin() {
-        SG_Grid::Point out = queue.extractMin();
-        if constexpr (!noHashSet && !uniformCost && fullDecreaseKey) hashMap.remove(out); // Prevents decreaseKey running on recycled/invalid nodeAddresses
+        const SG_Grid::Point out = queue.extractMin();
+        if constexpr (!noHashSet) hashMap.remove(out); // Prevents decreaseKey running on recycled/invalid nodeAddresses
         return out;
     }
 
-    inline void insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_, bool force = false ) {
+    inline bool insert(const SG_Grid::Point& tile, const SG_Grid::u_coordinate_t& priority_, const SG_Grid::u_coordinate_t& lastPriority = 0 ) {
+        if (lastPriority <= priority_ && lastPriority > 0) return false;
         auto priority = queue.encodePriority(priority_);
-        if constexpr (noHashSet) queue.insert(tile, priority);
+        if constexpr (noHashSet) {
+            return queue.insert(tile, priority, lastPriority);
+        }
         else {
-            bool toInsert;
-            if constexpr (!useContains) {toInsert = force;}
-            else toInsert = force || !hashMap.contains(tile);
-            if (toInsert) {
-                hashMap.insert(tile, {queue.forceInsert(tile, priority), priority});
-                return;
+            if (lastPriority == 0 || !hashMap.contains(tile)) {
+                hashMap.insert(tile, {queue.forceInsert(tile, priority)});
+                return true;
             }
-            if constexpr (uniformCost) return;
             nodeAddress& toCheck = hashMap.get(tile);
-            if (toCheck.priority <= priority) return;
-            toCheck.node = queue.decreaseKeyAndReturn(toCheck.node, toCheck.priority, priority);
-            toCheck.priority = priority;
+            toCheck.node = queue.decreaseKeyAndReturn(toCheck.node, queue.encodePriority(lastPriority), priority);
+            return true;
         }
     }
 
@@ -59,10 +56,11 @@ export namespace SG_Pathfind::PriorityQueue {
     private:
         struct nodeAddress {
             void* node;
-            SG_Grid::u_coordinate_t priority;
         };
-        struct empty{};
+        struct empty {
+            empty(const auto&, const auto&, const auto&, const auto&) {}
+        };
         BucketQueue<SG_Grid::Point, SG_Grid::u_coordinate_t, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO make bucketSize_t the same as priority_t in the BucketQueue implementation -> makes it work nicer with the binary heap version too
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, useContains, useBitfield>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, true, true>>  hashMap;
     };
 }

@@ -3,6 +3,7 @@
 //
 
 module;
+#include <atomic>
 #include <type_traits>
 #include "Logger.h"
 
@@ -228,6 +229,7 @@ export namespace SG_Allocator {
             if (impl.length() > 0) {
                 Node* out = static_cast<Node *>(impl.node_fromFront(0));
                 impl.shiftOutNode_front();
+                std::atomic_signal_fence(std::memory_order_acquire); // This seems to be necessary to prevent the clang optimiser from screwing things up in this function
                 if constexpr (reverseLinks && forwardLinks) new (out) Node(a, b, args...);
                 else if constexpr (reverseLinks || forwardLinks) new (out) Node(a, args...);
 
