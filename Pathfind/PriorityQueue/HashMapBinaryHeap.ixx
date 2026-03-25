@@ -55,9 +55,12 @@ export namespace SG_Pathfind::PriorityQueue {
 
     private:
         struct empty{
-            empty(const auto&, const auto&, const auto&, const auto&) {}
+            inline empty(const auto&, const auto&, const auto&, const auto&) {}
+            static inline void insert(const auto&){}
+            static inline void remove(const auto&){}
+            static inline bool contains(const auto&){return false;}
         };
         BinaryHeap<SG_Grid::Point, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO add some outer template parameters for rook/queen, and reserveDivisor
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, bool, true, true>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet || !fullDecreaseKey, empty, HashMap::GridRangeHashMap<InsideArenaType, bool, true, true>>  hashMap;
     };
 }

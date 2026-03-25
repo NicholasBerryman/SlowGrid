@@ -69,6 +69,9 @@ export namespace SG_Pathfind::PriorityQueue {
     private:
         struct empty{
             empty(const auto&, const auto&, const auto&, const auto&) {}
+            static inline void insert(const auto&){}
+            static inline void remove(const auto&){}
+            static inline bool contains(const auto&){return false;}
         };
         struct node{
             SG_Grid::Point val;
@@ -122,7 +125,7 @@ export namespace SG_Pathfind::PriorityQueue {
         };
 
         q_t queue;
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::STDHashMap<InsideArenaType, bool>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet || !fullDecreaseKey, empty, HashMap::STDHashMap<InsideArenaType, bool>>  hashMap;
         SG_Grid::u_coordinate_t counter;
     };
 }

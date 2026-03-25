@@ -59,8 +59,11 @@ export namespace SG_Pathfind::PriorityQueue {
         };
         struct empty {
             empty(const auto&, const auto&, const auto&, const auto&) {}
+            static inline void insert(const auto&){}
+            static inline void remove(const auto&){}
+            static inline bool contains(const auto&){return false;}
         };
         BucketQueue<SG_Grid::Point, SG_Grid::u_coordinate_t, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO make bucketSize_t the same as priority_t in the BucketQueue implementation -> makes it work nicer with the binary heap version too
-        [[no_unique_address]] std::conditional_t<noHashSet, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, true, true>>  hashMap;
+        [[no_unique_address]] std::conditional_t<noHashSet || !fullDecreaseKey, empty, HashMap::GridRangeHashMap<InsideArenaType, nodeAddress, true, true>>  hashMap;
     };
 }
