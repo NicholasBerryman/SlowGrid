@@ -110,7 +110,7 @@ namespace LocalDataStructures {
              *
              * @return Maximum number of elements supported by this queue
              */
-            inline static Length_T maxLength() requires (staticSize > 0) { return staticSize; }
+            static constexpr Length_T maxLength() requires (staticSize > 0) { return staticSize; }
 
             /**
              *

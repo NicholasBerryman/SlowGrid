@@ -20,6 +20,8 @@ import :HashMapBucketQueue;
 import :HashMapBinaryHeap;
 import :STDPriorityQueue;
 
+//TODO keep track of best heuristic tile, and path to that it we don't get the endPoint jishin
+
 //TODO make it default to heap when non-integer Grid_t::T
 namespace SG_Pathfind::AStar {
     template<bool useSTD, bool useHeap, bool tryFifo, bool useHashset, bool queensCase, bool Flowfield, typename WorkingArenaType, typename Grid_t>
@@ -103,10 +105,10 @@ export namespace SG_Pathfind::AStar {
         auto& directions = Utils::AvailableMoves<queensCase>();
         typedef std::conditional_t<useSTD, HashMap::STDHashMap<OutputArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<OutputArenaType,SG_Grid::u_coordinate_t>> visited_t;
         typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::Point, true>> flow_t;
-        auto& flow(*outArena.template allocConstruct<flow_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a Point (x/y direction) -> Flowfield
+        auto& flow(*outArena.template allocConstruct<flow_t>(outArena, OnGrid, startPoint, searchDistance));
 
         arena.sublifetime_open();
-        visited_t visited(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
+        visited_t visited(arena, OnGrid, startPoint, searchDistance);
         SG_PATHFIND_AStar(true)(arena, OnGrid, startPoint, searchDistance, visited, flow, directions);
         arena.sublifetime_rollback();
         return flow;
@@ -118,10 +120,10 @@ export namespace SG_Pathfind::AStar {
         auto& directions = Utils::AvailableMoves<queensCase>();
         typedef std::conditional_t<useSTD, HashMap::STDHashMap<OutputArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<OutputArenaType,SG_Grid::u_coordinate_t>> visited_t;
         typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::Point, false>> flow_t;
-        auto& visited(*outArena.template allocConstruct<visited_t>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a distance -> Distance Matrix
+        auto& visited(*outArena.template allocConstruct<visited_t>(outArena, OnGrid, startPoint, searchDistance));
 
         arena.sublifetime_open();
-        flow_t flow(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
+        flow_t flow(arena, OnGrid, startPoint, searchDistance);
         SG_PATHFIND_AStar(true)(arena, OnGrid, startPoint, searchDistance, visited, flow, directions);
         arena.sublifetime_rollback();
         return visited;

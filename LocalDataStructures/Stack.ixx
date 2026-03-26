@@ -61,7 +61,7 @@ namespace LocalDataStructures {
              */
             void clear() { stackPointer = 0; }
 
-            [[nodiscard]] static inline Length_T maxLength() requires (staticSize > 0) {return staticSize; }
+            [[nodiscard]] static constexpr Length_T maxLength() requires (staticSize > 0) {return staticSize; }
             [[nodiscard]] inline const Length_T& length() const {return stackPointer; };
         };
     }
