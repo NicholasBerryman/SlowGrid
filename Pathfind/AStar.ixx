@@ -20,7 +20,7 @@ import :HashMapBucketQueue;
 import :HashMapBinaryHeap;
 import :STDPriorityQueue;
 
-//TODO keep track of best heuristic tile, and path to that it we don't get the endPoint jishin
+//TODO keep track of best heuristic tile, and path to that if we don't get the endPoint jishin
 
 //TODO make it default to heap when non-integer Grid_t::T
 namespace SG_Pathfind::AStar {
@@ -30,7 +30,7 @@ namespace SG_Pathfind::AStar {
             PriorityQueue::STDPriorityQueue<WorkingArenaType, Grid_t, false, tryFifo, !useHashset>,
             std::conditional_t<useHeap,
                 PriorityQueue::HashMapBinaryHeap<WorkingArenaType, Grid_t, false, tryFifo, !useHashset>,
-                PriorityQueue::HashMapBucketQueue<WorkingArenaType, Grid_t, true, tryFifo, !useHashset>>> queue_t; \
+                PriorityQueue::HashMapBucketQueue<WorkingArenaType, Grid_t, false, tryFifo, !useHashset>>> queue_t; \
 
         SG_Grid::u_coordinate_t pmax;
         SG_Grid::u_coordinate_t pmin;

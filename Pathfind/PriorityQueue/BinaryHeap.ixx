@@ -20,12 +20,12 @@ export namespace SG_Pathfind::PriorityQueue {
         public:
             BinaryHeap(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) requires (!queensCase):
                 heap(arena, static_cast<SG_Allocator::arenaSize_t>(
-                    2 * (maxPriority_ - minPriority_) * (maxPriority_ - minPriority_ - 1) + 1) / reserveDivisor // 2x(x-1)+1
+                    2 * (maxPriority_ - minPriority_) * (maxPriority_ - minPriority_ - 1) + 1) / reserveDivisor + 1 // 2x(x-1)+1
                 ){if constexpr (fifoOnTie) counter = 0;}
 
             BinaryHeap(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) requires (queensCase):
                 heap(arena, static_cast<SG_Allocator::arenaSize_t>(
-                    (2 * (maxPriority_ - minPriority_ - 1)) * (2 * (maxPriority_ - minPriority_ - 1)) / reserveDivisor // (2x-1)^2
+                    (2 * (maxPriority_ - minPriority_ - 1)) * (2 * (maxPriority_ - minPriority_ - 1)) / reserveDivisor + 1// (2x-1)^2
                 )){if constexpr (fifoOnTie) counter = 0;}
 
             static inline const priority_t& encodePriority(const priority_t& priority){ return priority; }
@@ -106,7 +106,7 @@ export namespace SG_Pathfind::PriorityQueue {
                 [[no_unique_address]] std::conditional_t<fifoOnTie, priority_t, empty> tiebreak;
                 Node(priority_t priority, T value) requires (!fifoOnTie): priority(priority), value(value){}
                 Node(priority_t priority, T value, priority_t tiebreak) requires  (fifoOnTie): priority(priority), value(value), tiebreak(tiebreak){}
-                bool operator<(const Node& other) const {
+                inline bool operator<(const Node& other) const {
                     if constexpr (fifoOnTie) if (priority == other.priority) return tiebreak > other.tiebreak;
                     return priority < other.priority;
                 }
