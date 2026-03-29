@@ -9,10 +9,10 @@
 import Logger;
 import SG_Allocator;
 
-template <typename a, typename align, bool recycle = true>
+template <SG_Allocator::OptionalArena_c<char,char> a, typename align, bool recycle = true>
 void testLLDoubleLinked2(){
     a myHeap;
-    SG_Allocator::LinkedList<a, align, SG_Allocator::arenaSize_t, true, true, recycle> ll(myHeap);
+    SG_Allocator::LinkedList<align, typename a::arenaSize_t, true, true, recycle, false, a> ll(myHeap);
 
     assert(ll.length() == 0);
     ll.construct_back(16);
@@ -88,7 +88,7 @@ void testLLDoubleLinked2(){
 	assert(ll.length() == 0);
 
 	SG_Allocator::Arena_ULL<10000, 256> arena;
-	SG_Allocator::LinkedList<SG_Allocator::Arena_ULL<10000, 256>, uint64_t, uint64_t> lll(arena);
+	SG_Allocator::LinkedList<uint64_t, uint64_t, true, true, true, false, decltype(arena)> lll(arena);
 
 	uint64_t x = 16;
 	for (int i = 0; i < 16; i++) {
@@ -127,7 +127,7 @@ void testLLDoubleLinked2(){
 template <typename a, typename align, bool recycle = true>
 void testLLForwardLink2(){
     a myHeap;
-    SG_Allocator::LinkedList<a, align, SG_Allocator::arenaSize_t, true, false, recycle> llf(myHeap);
+    SG_Allocator::LinkedList<align, typename a::arenaSize_t, true, false, recycle, false, a> llf(myHeap);
 
 	assert(llf.length() == 0);
 	llf.construct_front(16);
@@ -158,24 +158,24 @@ void testLLForwardLink2(){
 
 
 int main(int, char**) {
-    testLLDoubleLinked2<SG_Allocator::PseudoArena, char>();
-    testLLDoubleLinked2<SG_Allocator::PseudoArena, uint64_t>();
+    testLLDoubleLinked2<SG_Allocator::PseudoArena<>, char>();
+    testLLDoubleLinked2<SG_Allocator::PseudoArena<>, uint64_t>();
     testLLDoubleLinked2<SG_Allocator::Arena_ULL<1000,3>, char>();
     testLLDoubleLinked2<SG_Allocator::Arena_ULL<32,3>, uint64_t>();
 
-	testLLForwardLink2<SG_Allocator::PseudoArena, char>();
-	testLLForwardLink2<SG_Allocator::PseudoArena, uint64_t>();
+	testLLForwardLink2<SG_Allocator::PseudoArena<>, char>();
+	testLLForwardLink2<SG_Allocator::PseudoArena<>, uint64_t>();
 	testLLForwardLink2<SG_Allocator::Arena_ULL<1000,3>, char>();
 	testLLForwardLink2<SG_Allocator::Arena_ULL<32,3>, uint64_t>();
 
 
-	testLLDoubleLinked2<SG_Allocator::PseudoArena, char, false>();
-	testLLDoubleLinked2<SG_Allocator::PseudoArena, uint64_t, false>();
+	testLLDoubleLinked2<SG_Allocator::PseudoArena<>, char, false>();
+	testLLDoubleLinked2<SG_Allocator::PseudoArena<>, uint64_t, false>();
 	testLLDoubleLinked2<SG_Allocator::Arena_ULL<1000,3>, char, false>();
 	testLLDoubleLinked2<SG_Allocator::Arena_ULL<32,3>, uint64_t, false>();
 
-	testLLForwardLink2<SG_Allocator::PseudoArena, char, false>();
-	testLLForwardLink2<SG_Allocator::PseudoArena, uint64_t, false>();
+	testLLForwardLink2<SG_Allocator::PseudoArena<>, char, false>();
+	testLLForwardLink2<SG_Allocator::PseudoArena<>, uint64_t, false>();
 	testLLForwardLink2<SG_Allocator::Arena_ULL<1000,3>, char, false>();
 	testLLForwardLink2<SG_Allocator::Arena_ULL<32,3>, uint64_t, false>();
 

@@ -2,23 +2,28 @@
 // Created by nickberryman on 10/12/25.
 //
 module;
-#include "Logger.h"
-#include <algorithm>
 #include <type_traits>
+
 
 export module SG_Pathfind:Utils;
 import LocalDataStructures;
 import SG_Grid;
 import :GridRangeHashMap;
 import :STDHashMap;
+import :BaseHashMap;
+
 
 export namespace SG_Pathfind::Utils {
-    template <const SG_Grid::u_coordinate_t maxOutputNodes = 256> using Path_t = LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>;
-    template <typename ArenaType, bool useSTD = false> using Flowfield_t = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::Point>,          HashMap::GridRangeHashMap<ArenaType,SG_Grid::Point>>;
-    template <typename ArenaType, bool useSTD = false> using Dmat_t      = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<ArenaType,SG_Grid::u_coordinate_t>>;
+    template<typename T> concept Path_c  = requires(T t, SG_Grid::Point p) { {t.push(p)}; };
+    template <typename T> concept Flowfield_c = HashMap::GridHashmap_c<T,SG_Grid::Point>;
+    template <typename T> concept Dmat_c = HashMap::GridHashmap_c<T,SG_Grid::u_coordinate_t>;
+
+    template <const SG_Grid::u_coordinate_t maxOutputNodes = 256> using defaultPath_t = LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>;
+    template <typename ArenaType, bool useSTD = false> using defaultFlowfield_t = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::Point>,          HashMap::GridRangeHashMap<ArenaType,SG_Grid::Point>>;
+    template <typename ArenaType, bool useSTD = false> using defaultDmatrix_t   = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<ArenaType,SG_Grid::u_coordinate_t>>;
+
     
-    
-    //TODO probably prioritise horizontal movement first (reduces weird movement for queen's case) -> might need to update unit tests to account
+    //TODO probably prioritise horizontal movement first (might reduce weird movement for queen's case) -> might need to update unit tests to account
     LocalDataStructures::Stack<SG_Grid::Point,8> QueenMoves({
         { 0,-1},
         { 1, 0},
@@ -37,7 +42,7 @@ export namespace SG_Pathfind::Utils {
     });
     template <bool QueensCase> const auto& AvailableMoves(){ if constexpr (QueensCase) return QueenMoves; else return RookMoves; }
 
-    //TODO add some string-pulling logic, so we can get nicer paths esp in QueensCase
+    //TODO add some string-pulling functions, so we can get nicer paths esp in QueensCase
         // Add a grid-bound string pull function
         // Add an any-direction string pull function
     template <typename HashMap_t, typename Out_t, const SG_Grid::u_coordinate_t maxOutputNodes = 256>

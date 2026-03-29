@@ -20,7 +20,7 @@ export namespace SG_Grid {
      * @tparam height_ height of grid in squares - try to keep width and height powers of 2 for performance.
      */
     template<typename T, u_coordinate_t width_, u_coordinate_t height_, bool isBitfield = false, bool is2Power = false>
-    class FullGrid : private BaseGrid<T> {
+    class FullGrid {
         static_assert((width_ > 0 && height_ > 0) || (width_ == 0 && height_ == 0), "Width and height must both be positive or zero");
         static_assert(!isBitfield || std::is_same_v<bool, T>, "Bitfield only supported for bools");
     public:
@@ -28,8 +28,7 @@ export namespace SG_Grid {
             width_var(width_),
             height_var(height_) {}
 
-        template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        explicit FullGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && is2Power) :
+        explicit FullGrid(SG_Allocator::BaseArena_c<T, T> auto& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && is2Power) :
             impl(arena,(internalWidth(width) * height)),
             width_var(width),
             height_var(height),
@@ -37,18 +36,17 @@ export namespace SG_Grid {
             heightMult(std::bit_width((height_var))-1)
         { LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);}
 
-        template<typename InsideArenaType> requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        explicit FullGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && !is2Power) :
+        explicit FullGrid(SG_Allocator::BaseArena_c<T, T> auto& arena, const u_coordinate_t& width, const u_coordinate_t& height) requires (width_ == 0 && !is2Power) :
             impl(arena,(internalWidth(width) * height)),
             width_var(width),
             height_var(height)
         { LOGGER_ASSERT_EXCEPT(width > 0 && height > 0);}
 
-        inline T get(const Point& at) const requires (isBitfield) {
+        [[nodiscard]] inline T get(const Point& at) const requires (isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return (smartFind(at.x(),at.y()) >> (at.x()%8)) & 1;
         }
-        inline const T& get(const Point& at) const requires (!isBitfield) {
+        [[nodiscard]] inline const T& get(const Point& at) const requires (!isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             return smartFind(at.x(),at.y());
         }
@@ -81,7 +79,7 @@ export namespace SG_Grid {
             else std::memset(impl.impl(), toFill, height() * internalWidth(width()) * sizeof(internalT));
         }
 
-        template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) requires (!isBitfield) { return *new (&get(at)) T(args...);  }
+        template <typename... ConstructorArgs> inline T& construct(const Point& at, ConstructorArgs&&... args) { return *new (&get(at)) T(args...);  }
 
         [[nodiscard]] const u_coordinate_t& width() const { return width_var; }
         [[nodiscard]] const u_coordinate_t& height() const { return height_var; }
@@ -118,4 +116,8 @@ export namespace SG_Grid {
         [[nodiscard]] static inline u_coordinate_t internalWidth(const u_coordinate_t& x) requires isBitfield { return x/8+(x%8 > 0); }
         [[nodiscard]] static inline const u_coordinate_t& internalWidth(const u_coordinate_t& x) requires (!isBitfield) { return x; }
     };
+    static_assert(BaseGrid_c<FullGrid<char,0,0>>);
+    static_assert(BaseGrid_c<FullGrid<bool,0,0>>);
+    static_assert(ConstructingGrid_c<FullGrid<char,0,0>, char>);
+    static_assert(ConstructingGrid_c<FullGrid<bool,0,0>, char>);
 }

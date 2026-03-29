@@ -12,7 +12,7 @@ import LocalDataStructureConfigs;
 template <typename a, localSize_t cacheSize, localSize_t backlogSize>
 void testCC(){
     a myHeap;
-    SG_Allocator::CachedQueue<a, int,cacheSize, backlogSize> queue(myHeap);
+    SG_Allocator::CachedQueue<int,cacheSize, a, backlogSize> queue(myHeap);
 
     queue.push(10);
     queue.push(8);
@@ -63,7 +63,7 @@ void testCC(){
 }
 
 int main(int, char**) {
-    testCC<SG_Allocator::PseudoArena, 1, 2>();
+    testCC<SG_Allocator::PseudoArena<>, 1, 2>();
     testCC<SG_Allocator::Arena_ULL<32,3>, 1, 2>();
     return 0;
 }

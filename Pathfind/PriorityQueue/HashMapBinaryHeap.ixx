@@ -18,7 +18,7 @@ export namespace SG_Pathfind::PriorityQueue {
     class HashMapBinaryHeap {
     public:
         HashMapBinaryHeap(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :
-            queue(arena, maxCost, minCost), 
+            queue(arena, maxCost, minCost),
             hashMap(arena, within, centrePoint, maxDistanceChebyshev) {}
     
     inline const SG_Grid::Point& valueAt(const SG_Grid::u_coordinate_t& priority) { return queue.valueAt(queue.encodePriority(priority)); }
@@ -60,6 +60,7 @@ export namespace SG_Pathfind::PriorityQueue {
             static inline void remove(const auto&){}
             static inline bool contains(const auto&){return false;}
         };
+
         BinaryHeap<SG_Grid::Point, SG_Grid::u_coordinate_t, InsideArenaType, fullDecreaseKey, fifoOnTie> queue; //TODO add some outer template parameters for rook/queen, and reserveDivisor
         [[no_unique_address]] std::conditional_t<noHashSet || !fullDecreaseKey, empty, HashMap::GridRangeHashMap<InsideArenaType, bool, true, true>>  hashMap;
     };

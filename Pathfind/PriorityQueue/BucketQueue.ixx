@@ -16,7 +16,6 @@ import SG_Allocator;
 
 
 //TODO make const correct, along with the other priority queues
-//TODO double-check that A* with an admissible heuristic still satisfies the 'monotonic increasing' assumption that this uses here
 export namespace SG_Pathfind::PriorityQueue {
     template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true, bool fifoOnTie = false>
     class BucketQueue : private BasePriorityQueue<T, priority_t>{
@@ -118,7 +117,7 @@ export namespace SG_Pathfind::PriorityQueue {
         }
 
     private:
-        SG_Allocator::LinkedList<InsideArenaType, T, priority_t, true, true, true, false> buckets;
+        SG_Allocator::LinkedList<T, priority_t, true, true, true, false, InsideArenaType> buckets;
         priority_t bucketCount;
         SG_Allocator::RuntimeArray<void*, priority_t> bucketStarts;
         SG_Allocator::RuntimeArray<bucketSize_t, priority_t> bucketLengths;

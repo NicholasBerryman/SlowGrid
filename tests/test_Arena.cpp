@@ -119,6 +119,8 @@ void testArena(){
 }
 
 int main(int, char**) {
+    //static_assert(SG_Allocator::OptionalArena_c<SG_Allocator::BaseArena, char, char>);
+
     testArena();
     return 0;
 }

@@ -28,7 +28,7 @@ void testULL(){
     // Test alloc beyond initialSize
     (*ull.template alloc<char>()) = 'D';
     void* holdNode = SG_Allocator::NodeExaminer<a, align>::currentTail(ull);
-    SG_Allocator::arenaSize_t holdSize = ull.length();
+    typename a::arenaSize_t holdSize = ull.length();
     (*ull.template alloc<char>()) = 'E';
     assert(*ull.template get<char>(0) == 'A');
     assert(*ull.template get<char>(1) == 'B');
@@ -116,7 +116,7 @@ void testULL(){
 template <typename a, typename T>
 void testULL2() {
     a myHeap;
-    SG_Allocator::ULL2<a, T> ull(myHeap, 8);
+    SG_Allocator::ULL2<T, a> ull(myHeap, 8);
 
     assert(ull.length() == 0);
     assert(ull.maxSize() == 8);
@@ -172,8 +172,8 @@ void testULL2() {
 
 
 int main(int, char**) {
-    testULL<SG_Allocator::PseudoArena, char>();
-    testULL<SG_Allocator::PseudoArena, uint64_t>();
+    testULL<SG_Allocator::PseudoArena<>, char>();
+    testULL<SG_Allocator::PseudoArena<>, uint64_t>();
 
     testULL<SG_Allocator::Arena_ULL<1000,3>, char>();
     testULL<SG_Allocator::Arena_ULL<32,3>, uint64_t>();

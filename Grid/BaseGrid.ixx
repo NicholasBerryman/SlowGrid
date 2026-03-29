@@ -1,27 +1,33 @@
 //
 // Created by nickberryman on 9/12/25.
 //
+module;
+#include <concepts>
+#include <utility>
+
 export module SG_Grid:BaseGrid;
 import :Point;
 import SG_GridConfigs;
 import Logger;
 
 export namespace SG_Grid {
-    /**
-     * @brief Interface for grids. Should only be inherited from, never used directly
-     * 
-     */
-    template<typename T>
-    class BaseGrid {
-    public:
-        inline T& get(const Point& at){Logging::assert_except(0); return reinterpret_cast<T&>(*this);}
-        inline void set(const Point& at, const T& value){Logging::assert_except(0);}
-        inline coordinate_t width(){Logging::assert_except(0); return 0;}
-        inline coordinate_t height(){Logging::assert_except(0); return 0;}
-        inline void fill(const T& value){Logging::assert_except(0);}
-        typedef T value_type;
-
-    protected:
-        BaseGrid() = default;
+    template <typename T>
+    concept BaseGrid_c  = requires(T t, Point p, typename T::value_type v, char c)
+    {
+        typename T::value_type;
+        {t.get(p)} -> std::convertible_to<typename T::value_type>;
+        {t.set(p, v)};
+        {t.width()} -> std::convertible_to<u_coordinate_t>;
+        {t.height()} -> std::convertible_to<u_coordinate_t>;
+        {t.fill(v)};
+        {t.fill_memset(c)};
     };
+
+
+    template <typename T, typename... canAllocArgs>
+    concept ConstructingGrid_c  = requires(T t, Point p, typename T::value_type v, char c, canAllocArgs... args)
+    {
+        {t.template construct<canAllocArgs...>(p, std::forward<canAllocArgs...>(args...))};
+    } && BaseGrid_c<T>;
+
 }

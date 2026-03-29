@@ -11,6 +11,7 @@ module;
 
 export module SG_Pathfind:GridRangeHashMap;
 import :BaseHashMap;
+import SG_Allocator;
 import SG_Grid;
 import Logger;
 
@@ -27,14 +28,14 @@ const SG_Grid::u_coordinate_t& min(const SG_Grid::u_coordinate_t& a, const SG_Gr
 
 export namespace SG_Pathfind::HashMap {
     template<typename insideArena_t, typename value_t = bool, bool useContains=true, bool useBitfield=true, uint8_t partitionContains=0, uint8_t partitionGet=0, bool is2Power = false>
-    class GridRangeHashMap : private BaseHashMap<SG_Grid::Point, value_t, SG_Grid::Point>{
+    class GridRangeHashMap{
     private:    
         static constexpr uint8_t partitionGet_ = []{if constexpr (std::is_same_v<value_t, bool>) return partitionContains; else return partitionGet;}();
         static constexpr bool useContains_  = useContains || std::is_same_v<value_t, bool>;
     
-    public:  
-        template <typename pathfindGrid_t> requires (std::is_base_of_v<SG_Grid::BaseGrid<typename pathfindGrid_t::value_type>, pathfindGrid_t> && !(std::is_same_v<value_t, bool>))
-        inline GridRangeHashMap(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::u_coordinate_t& distance) :
+    public:
+        template <SG_Grid::BaseGrid_c pathfindGrid_t>
+        inline GridRangeHashMap(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::u_coordinate_t& distance) requires (!std::is_same_v<value_t, bool>):
             origin(max(0, centrePoint.x() - distance), max(0, centrePoint.y() - distance)),
             containsGrid(arena, partitionCount(partitionContains), partitionCount(partitionContains), innerWidth(within, centrePoint, distance) , innerHeight(within, centrePoint, distance)),
             getGrid(arena, partitionCount(partitionGet_), partitionCount(partitionGet_), innerWidth<pathfindGrid_t, false>(within, centrePoint, distance) , innerHeight<pathfindGrid_t, false>(within, centrePoint, distance)),
@@ -45,8 +46,7 @@ export namespace SG_Pathfind::HashMap {
             #endif
         { clear(); }
 
-        template <typename pathfindGrid_t> requires (std::is_base_of_v<SG_Grid::BaseGrid<typename pathfindGrid_t::value_type>, pathfindGrid_t> && std::is_same_v<value_t, bool>)
-        inline GridRangeHashMap(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::u_coordinate_t& distance) :
+        inline GridRangeHashMap(insideArena_t& arena, const SG_Grid::BaseGrid_c auto& within, const SG_Grid::Point& centrePoint, const SG_Grid::u_coordinate_t& distance) requires std::is_same_v<value_t, bool> :
             origin(max(0, centrePoint.x() - distance), max(0, centrePoint.y() - distance)),
             containsGrid(arena, partitionCount(partitionContains), partitionCount(partitionContains), innerWidth(within, centrePoint, distance) , innerHeight(within, centrePoint, distance)),
             getGrid(containsGrid),
@@ -99,8 +99,14 @@ export namespace SG_Pathfind::HashMap {
 
     private:
         typedef SG_Grid::RuntimeSizeGrid<bool, useBitfield, (partitionContains > 0)> containsGrid_t; //Only enable 2Power optimisation if it's rounded because we want to use sparse storage
-        struct empty: public SG_Grid::BaseGrid<value_t> {
+        struct empty{
             empty(const auto&, const auto&, const auto&, const auto&, const auto&){};
+            /*typedef value_t value_type;
+            inline value_t& get(const SG_Grid::Point& at){Logging::assert_except(0); return reinterpret_cast<value_t&>(*this);}
+            inline void set(const SG_Grid::Point& at, const value_t& value){Logging::assert_except(0);}
+            inline SG_Grid::u_coordinate_t width(){Logging::assert_except(0); return 0;}
+            inline SG_Grid::u_coordinate_t height(){Logging::assert_except(0); return 0;}
+            inline void fill(const value_t& value){Logging::assert_except(0);}*/
         };
 
         typedef std::conditional_t< !(std::is_same_v<value_t, bool>),
@@ -112,13 +118,13 @@ export namespace SG_Pathfind::HashMap {
         SG_Grid::Point origin;
 
         [[no_unique_address]] std::conditional_t<useContains_,
-            std::conditional_t<partitionContains == 0, containsGrid_t, SG_Grid::SparseRuntimeGrid<insideArena_t,containsGrid_t>>,
+            std::conditional_t<partitionContains == 0, containsGrid_t, SG_Grid::SparseRuntimeGrid<containsGrid_t, insideArena_t>>,
             empty
         > containsGrid;
 
         std::conditional_t<partitionGet_ == 0, getGrid_t,
             std::conditional_t<!(std::is_same_v<value_t, bool>), 
-                SG_Grid::SparseRuntimeGrid<insideArena_t,std::remove_reference_t<getGrid_t>>, 
+                SG_Grid::SparseRuntimeGrid<std::remove_reference_t<getGrid_t>, insideArena_t>,
                 std::add_lvalue_reference_t<decltype(containsGrid)> >
         > getGrid;
 
@@ -178,7 +184,8 @@ export namespace SG_Pathfind::HashMap {
                 containsGrid.set(calcHash(key),1);
             }
         }
-        
     };
+    static_assert(GridHashmap_c<GridRangeHashMap<SG_Allocator::defaultArena<>, char>, char>);
+    static_assert(GridHashset_c<GridRangeHashMap<SG_Allocator::defaultArena<>, bool>>);
 }
 

@@ -24,7 +24,7 @@ void testOnStack(){
     LOGGER_ASSERT_EXCEPT(grid.height() == 11);
     LOGGER_ASSERT_EXCEPT(grid.width() == 11);
 
-    LOGGER_ASSERT_ERROR( grid.get(SG_Grid::Point(11,0)); )
+    LOGGER_ASSERT_ERROR( auto testerr1 = grid.get(SG_Grid::Point(11,0)); )
 	
 
 	grid.fill(0);

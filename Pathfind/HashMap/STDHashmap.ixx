@@ -17,11 +17,9 @@ import Logger;
 
 export namespace SG_Pathfind::HashMap {
     template<typename insideArena_t, typename value_t = bool, bool _ = false, int __ = 0, int ___ = 0>
-    class STDHashMap : private BaseHashMap<SG_Grid::Point, value_t, SG_Grid::Point>{
-    private:    
-    public: 
-        template <typename pathfindGrid_t>
-        inline STDHashMap(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& distance):
+    class STDHashMap{
+    public:
+        inline STDHashMap(insideArena_t& arena, const SG_Grid::BaseGrid_c auto& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& distance):
             hashWidth(within.width())
         {}
 

@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 4.0)
 project(SlowGrid)
 set(CMAKE_CXX_STANDARD 23)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options("-fconcepts-diagnostics-depth=100")
+endif()
+
 ### Subdirectories ###
 add_subdirectory(Logger)
 add_subdirectory(LocalDataStructures)
@@ -38,4 +42,4 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT "-g -O3" CACHE STRING
 mark_as_advanced(CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -g -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT "${CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT} -fsanitize=address -g -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT "${CMAKE_CXX_FLAGS_RELWITHDEBUGANDASSERT} -fsanitize=address -g")

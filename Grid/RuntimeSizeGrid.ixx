@@ -20,16 +20,12 @@ export namespace SG_Grid {
      * @tparam useBitfield True if a compressed representation for bools should be used (slower, but 8x smaller in memory - requires bool T)
      */
     template <typename T, bool useBitfield = false, bool is2Power = false>
-    class RuntimeSizeGrid : private BaseGrid<T> {
+    class RuntimeSizeGrid {
         static_assert(!useBitfield | std::is_same_v<T, bool>, "Bitfields can only be used with booleans");
     public:
-        template<typename InsideArenaType>
-        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        RuntimeSizeGrid(InsideArenaType& arena, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){}
+        RuntimeSizeGrid(SG_Allocator::BaseArena_c<T, T> auto& arena, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){}
 
-        template<typename InsideArenaType>
-        requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-        RuntimeSizeGrid(InsideArenaType& arena, const bool& dummyA, const bool& dummyB, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){} //Constructor to conform to SparseGrid compatibility
+        RuntimeSizeGrid(SG_Allocator::BaseArena_c<T, T> auto& arena, const bool& dummyA, const bool& dummyB, const u_coordinate_t& width, const u_coordinate_t& height) : impl(arena,width,height){} //Constructor to conform to SparseGrid compatibility
 
         inline const T& get(const Point& at) const requires (!useBitfield)  {return impl.get(at);}
         inline T get(const Point& at) const requires (useBitfield)  {return impl.get(at);}
@@ -49,4 +45,5 @@ export namespace SG_Grid {
     private:
         FullGrid<T,0,0, useBitfield, is2Power> impl;
     };
+    //TODO add some static assert concept checks to this and SparseGrid
 }

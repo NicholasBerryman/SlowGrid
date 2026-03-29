@@ -19,19 +19,19 @@ export namespace SG_Pathfind::PriorityQueue {
     class BinaryHeap : private BasePriorityQueue<T, priority_t>{
         public:
             BinaryHeap(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) requires (!queensCase):
-                heap(arena, static_cast<SG_Allocator::arenaSize_t>(
+                heap(arena, static_cast<InsideArenaType::arenaSize_t>(
                     2 * (maxPriority_ - minPriority_) * (maxPriority_ - minPriority_ - 1) + 1) / reserveDivisor + 1 // 2x(x-1)+1
                 ){if constexpr (fifoOnTie) counter = 0;}
 
             BinaryHeap(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) requires (queensCase):
-                heap(arena, static_cast<SG_Allocator::arenaSize_t>(
+                heap(arena, static_cast<InsideArenaType::arenaSize_t>(
                     (2 * (maxPriority_ - minPriority_ - 1)) * (2 * (maxPriority_ - minPriority_ - 1)) / reserveDivisor + 1// (2x-1)^2
                 )){if constexpr (fifoOnTie) counter = 0;}
 
             static inline const priority_t& encodePriority(const priority_t& priority){ return priority; }
             static inline const priority_t& decodePriority(const priority_t& priority){ return priority; }
 
-            [[nodiscard]] inline const SG_Allocator::arenaSize_t& length() const { return heap.length(); }
+            [[nodiscard]] inline const InsideArenaType::arenaSize_t& length() const { return heap.length(); }
 
 
             inline void forceInsert(const T& value, const priority_t& priority) {
@@ -111,15 +111,15 @@ export namespace SG_Pathfind::PriorityQueue {
                     return priority < other.priority;
                 }
             };
-            SG_Allocator::ULL2<InsideArenaType, Node> heap;
+            SG_Allocator::ULL2<Node,InsideArenaType> heap;
             [[no_unique_address]] std::conditional_t<fifoOnTie, priority_t, empty> counter;
 
-            static inline SG_Allocator::arenaSize_t parent(const SG_Allocator::arenaSize_t& index) { return (index - 1) / 2; }
-            static inline SG_Allocator::arenaSize_t leftChild(const SG_Allocator::arenaSize_t& index) { return (2 * index + 1); }
-            static inline SG_Allocator::arenaSize_t rightChild(const SG_Allocator::arenaSize_t& index) { return (2 * index + 2); }
+            static inline InsideArenaType::arenaSize_t parent(const InsideArenaType::arenaSize_t& index) { return (index - 1) / 2; }
+            static inline InsideArenaType::arenaSize_t leftChild(const InsideArenaType::arenaSize_t& index) { return (2 * index + 1); }
+            static inline InsideArenaType::arenaSize_t rightChild(const InsideArenaType::arenaSize_t& index) { return (2 * index + 2); }
 
             // Heapify up to maintain heap property
-            inline void heapifyUp(const SG_Allocator::arenaSize_t& index_) {
+            inline void heapifyUp(const InsideArenaType::arenaSize_t& index_) {
                 auto index = index_;
                 while (index && heap.get(index) < heap.get(parent(index))) {
                     std::swap(heap.get(index), heap.get(parent(index)));
@@ -129,9 +129,9 @@ export namespace SG_Pathfind::PriorityQueue {
 
             // Heapify down to maintain heap property
             inline void heapifyDown(priority_t index) {
-                SG_Allocator::arenaSize_t left = leftChild(index);
-                SG_Allocator::arenaSize_t right = rightChild(index);
-                SG_Allocator::arenaSize_t smallest = index;
+                typename InsideArenaType::arenaSize_t left = leftChild(index);
+                typename InsideArenaType::arenaSize_t right = rightChild(index);
+                typename InsideArenaType::arenaSize_t smallest = index;
 
                 if (left  < heap.length() && heap.get(left)  < heap.get(smallest))
                     smallest = left;

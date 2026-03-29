@@ -1,17 +1,47 @@
 //
 // Created by nickberryman on 1/12/25.
 //
+module;
+#include <concepts>
+
 export module SG_Allocator:BaseArena;
 import SG_AllocatorConfigs;
 import Logger;
 
 export namespace SG_Allocator {
+    template <typename T, typename canAlloc, typename... canAllocArgs>
+    concept BaseArena_c  = requires(T t, canAlloc a, typename T::arenaSize_t siz, canAllocArgs... args)
+    {
+        typename T::arenaSize_t;
+        {t.template alloc<canAlloc>()} -> std::same_as<canAlloc*>;
+        {t.template allocArray<canAlloc>(3)} -> std::same_as<canAlloc*>;
+        {t.template allocConstruct<canAlloc>(args...)} -> std::same_as<canAlloc*>;
+        {t.template allocConstructArray<canAlloc>(3, args...)} -> std::same_as<canAlloc*>;
+        {t.sublifetime_open()};
+        {t.sublifetime_rollback()};
+        {t.sublifetime_softRollback()};
+        {t.clear()};
+        {t.softClear()};
+        {t.expand(siz)};
+        {t.maxSize()} -> std::same_as<typename T::arenaSize_t>;
+        {t.usedSpace()} -> std::same_as<typename T::arenaSize_t>;
+    };
+
+    template <typename T, typename canAlloc, typename... canAllocArgs>
+    concept OptionalArena_c  = requires(T t, canAlloc* a)
+    {
+        {t.softDelete(a)};
+        {t.softDeleteArray(a)};
+    } && BaseArena_c<T, canAlloc, canAllocArgs...>;
+
     /**
-     * @brief Base class for arena allocators. Should only be inhereted from, never used directly
-     * 
+     * @brief Base class for arena allocators. Should only be inherited from, never used directly
+     *
      */
     class BaseArena {
     public:
+        using arenaSize_t = defaultArenaSize_t;
+
         template<typename T> inline T* alloc(){Logging::assert_except(0); return nullptr;};
         template<typename T> inline T* allocArray(arenaSize_t arrayLength){Logging::assert_except(0); return nullptr;};
 		template<typename T, typename... ConstructorArgs> inline T* allocConstruct(ConstructorArgs... args){Logging::assert_except(0); return nullptr;};

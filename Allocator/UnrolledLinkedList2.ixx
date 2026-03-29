@@ -20,31 +20,30 @@ export namespace SG_Allocator {
      * @tparam InsideArenaType Arena type to allocate blocks into (Does not accept PseudoArena)
      * @tparam T Data type to use for elements
      */
-    template<typename InsideArenaType, typename T>
-    requires std::is_base_of_v<BaseArena, InsideArenaType> && (!(std::is_base_of_v<PseudoArena, InsideArenaType>))
+    template<typename T, BaseArena_c<T> InsideArenaType>
     class ULL2 {
     public:
-        ULL2(InsideArenaType& arena, const arenaSize_t initialSize):
+        ULL2(InsideArenaType& arena, const InsideArenaType::arenaSize_t& initialSize):
             impl(arena, initialSize){}
 
         inline void clear(){impl.clear();}
         inline void softClear(){impl.softClear();}
-        inline void expand(const arenaSize_t& newSize){impl.expand(newSize);}
+        inline void expand(const InsideArenaType::arenaSize_t& newSize){impl.expand(newSize);}
         
-        inline T& get(const arenaSize_t& index){return *impl.template get<T>(index); }
-        inline const T& get(const arenaSize_t& index) const {return *impl.template get<T>(index); } //Const override
-        inline T& getFromBack(const arenaSize_t& indexFromBack){return *impl.template getFromBack<T>(indexFromBack); }
-        inline void set(const arenaSize_t& index, const T& value){ (*impl.template get<T>(index)) = value; }
-        inline void fill(const T& value){ for (arenaSize_t i = 0; i < impl.maxSize(); i++) (*impl.template get<T>(i)) = value; }
+        inline T& get(const InsideArenaType::arenaSize_t& index){return *impl.template get<T>(index); }
+        inline const T& get(const InsideArenaType::arenaSize_t& index) const {return *impl.template get<T>(index); } //Const override
+        inline T& getFromBack(const InsideArenaType::arenaSize_t& indexFromBack){return *impl.template getFromBack<T>(indexFromBack); }
+        inline void set(const InsideArenaType::arenaSize_t& index, const T& value){ (*impl.template get<T>(index)) = value; }
+        inline void fill(const T& value){ for (typename InsideArenaType::arenaSize_t i = 0; i < impl.maxSize(); i++) (*impl.template get<T>(i)) = value; }
 
         template<typename... ConstructorArgs> inline T& construct_back(ConstructorArgs&&... args) { return * (new (impl.template alloc<T>()) T(args...)); }
-        inline T* alloc_back(const arenaSize_t& count) { return impl.template allocArray<T>(count); }
+        inline T* alloc_back(const InsideArenaType::arenaSize_t& count) { return impl.template allocArray<T>(count); }
         inline void push_back(const T& value){ (*impl.template alloc<T>()) = value; }
         inline T pop_back() { const T& out = *(impl.template getFromBack<T>(0)); impl.dealloc(1); return out; }
         inline const T& back(){ return (*impl.template getFromBack<T>(0)); }
 
-        [[nodiscard]] inline arenaSize_t maxSize() const {return impl.maxSize();}
-        [[nodiscard]] inline const arenaSize_t& length() const {return impl.length();}
+        [[nodiscard]] inline InsideArenaType::arenaSize_t maxSize() const {return impl.maxSize();}
+        [[nodiscard]] inline const InsideArenaType::arenaSize_t& length() const {return impl.length();}
     private:
         ULL<InsideArenaType, T> impl;
     };

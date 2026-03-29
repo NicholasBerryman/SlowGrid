@@ -11,13 +11,13 @@ import SG_Allocator;
 import SG_Grid;
 import SG_Pathfind;
 
-#define BFS1_1(STD) SG_Pathfind::BFS::Bench::BFS_Point_<decltype(arena),decltype(arena), decltype(grid), true, 256, STD>
-#define BFS2_1(STD) SG_Pathfind::BFS::Bench::BFS_Flowfield_<decltype(arena),decltype(arena), decltype(grid), true, STD>
-#define BFS3_1(STD) SG_Pathfind::BFS::Bench::BFS_Dmatrix_<decltype(arena),decltype(arena), decltype(grid), true, STD>
+#define BFS1_1(STD) SG_Pathfind::BFS::Bench::BFS_Point_<true, 256, STD>
+#define BFS2_1(STD) SG_Pathfind::BFS::Bench::BFS_Flowfield_<true, STD>
+#define BFS3_1(STD) SG_Pathfind::BFS::Bench::BFS_Dmatrix_<true, STD>
 
-#define BFS1_2(STD) SG_Pathfind::BFS::Bench::BFS_Point_<decltype(arena),decltype(arena), decltype(grid), false, 256, STD>
-#define BFS2_2(STD) SG_Pathfind::BFS::Bench::BFS_Flowfield_<decltype(arena),decltype(arena), decltype(grid), false, STD>
-#define BFS3_2(STD) SG_Pathfind::BFS::Bench::BFS_Dmatrix_<decltype(arena),decltype(arena), decltype(grid), false, STD>
+#define BFS1_2(STD) SG_Pathfind::BFS::Bench::BFS_Point_<false, 256, STD>
+#define BFS2_2(STD) SG_Pathfind::BFS::Bench::BFS_Flowfield_<false, STD>
+#define BFS3_2(STD) SG_Pathfind::BFS::Bench::BFS_Dmatrix_<false, STD>
 
 
 template <typename T, bool useSTD>

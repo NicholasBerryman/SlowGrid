@@ -3,14 +3,17 @@
 //
 
 module;
+#include <concepts>
 export module SG_Allocator:PseudoArena;
 import SG_AllocatorConfigs;
 import :BaseArena;
 import Logger;
 
 export namespace SG_Allocator {
-	class PseudoArena : private BaseArena {
+	template <std::integral arenaSize_t_ = defaultArenaSize_t>
+	class PseudoArena {
 	public:
+		using arenaSize_t = arenaSize_t_;
 		template<typename T> static inline T* alloc(){return reinterpret_cast<T *>(new char[sizeof(T)]);};
 		template<typename T> static inline T* allocArray(const arenaSize_t& arrayLength){return reinterpret_cast<T *>(new char[sizeof(T) * arrayLength]);};
 		template<typename T, typename... ConstructorArgs> static inline T* allocConstruct(ConstructorArgs&&... args){return new T(args...);};
@@ -30,6 +33,7 @@ export namespace SG_Allocator {
 
 		template<typename T> inline void static softDelete(T* toDelete){delete toDelete;};
 		template<typename T> inline void static softDeleteArray(T* toDelete){delete[] toDelete;};
-
 	};
+	static_assert(OptionalArena_c<PseudoArena<>, char, char>);
+	static_assert(OptionalArena_c<PseudoArena<>, int, int>);
 }

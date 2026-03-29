@@ -16,16 +16,28 @@ import SG_Allocator;
 import Logger;
 
 export namespace SG_Grid {
+    template <typename T>
+    concept Chunk_c  = requires(T t, Point p, char c, typename T::value_type v)
+    {
+        typename T::value_type;
+        {t.get(p)} -> std::convertible_to<typename T::value_type>;
+        {t.set(p, v)};
+        {t.width()} -> std::convertible_to<u_coordinate_t>;
+        {t.height()} -> std::convertible_to<u_coordinate_t>;
+        {t.fill(v)};
+        {t.fill_memset(c)};
+    };
+
     /**
      * @brief Grid to sparsely store arbitrary type data.
      * @tparam Chunk_T Type to use for chunks (sub-grids within this grid)
      * @tparam width_ width of grid in squares (not chunks) - try to keep width and height powers of 2 for performance.
      * @tparam height_ height of grid in squares (not chunks) - try to keep width and height powers of 2 for performance.
      */
-    template<typename Chunk_T, u_coordinate_t width_, u_coordinate_t height_>
-	requires std::is_base_of_v<BaseGrid<typename Chunk_T::value_type>, Chunk_T>
-    class SparseGrid : private BaseGrid<typename Chunk_T::value_type>{
+    template<Chunk_c Chunk_T, u_coordinate_t width_, u_coordinate_t height_>
+    class SparseGrid{
         static_assert(width_ > 0 && height_ > 0 && Chunk_T::compileTimeWidth() > 0, "Width and height must be positive and known at compile time (including for inner chunks)");
+        static_assert(BaseGrid_c<Chunk_T>);
     public:
         SparseGrid(){}
 
@@ -64,17 +76,25 @@ export namespace SG_Grid {
         }
         inline Chunk_T* getChunk(const Point& at) {return const_cast<Chunk_T::value_type&>(std::as_const(*this).get(at));}
     private:
-        Chunk_T* impl[chunksWide()][chunksHigh()];
+        Chunk_T* impl[chunksWide()][chunksHigh()]; //TODO Double-check that this actually works and isn't relying on garbage values and/or undefined behaviour
     };
-
+    /*
+    static_assert(BaseGrid_c<SparseGrid<FullGrid<char,0,0>,3,3>>);
+    static_assert(BaseGrid_c<SparseGrid<FullGrid<bool,0,0>,3,3>>);
+    static_assert(ConstructingGrid_c<SparseGrid<FullGrid<char,0,0>,3,3>>);
+    static_assert(ConstructingGrid_c<SparseGrid<FullGrid<bool,0,0>,3,3>>);
+    */
+    //TODO make this satisfy the grid concepts
+    //  -> make a 'fill_memset' that sets a default value, and fill_memsets every loaded square -> retrieve that if we try to get at a non-loaded chunk
+    //  -> make a 'fill' that sets values in every loaded square, and also sets the default value
 
     /**
      * @brief Grid to sparsely store arbitrary type data, where grid size is not known at compile-time. Supergrid automatically rounded to power of 2 width/height for performance.
      * @tparam Chunk_T Type to use for chunks (sub-grids within this grid)
     */
-    template <typename InsideArenaType,typename Chunk_T>
-	requires (std::is_base_of_v<BaseGrid<typename Chunk_T::value_type>, Chunk_T> && std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>)
-    class SparseRuntimeGrid : private BaseGrid<typename Chunk_T::value_type>{
+    template <Chunk_c Chunk_T,typename InsideArenaType>
+    class SparseRuntimeGrid {
+        static_assert(SG_Allocator::BaseArena_c<InsideArenaType, Chunk_T, u_coordinate_t, u_coordinate_t>);
     public:
         constexpr static bool is2Power = Chunk_T::PowerOf2;
 
@@ -144,4 +164,11 @@ export namespace SG_Grid {
         const u_coordinate_t widthDivisor;
         const u_coordinate_t heightDivisor;
     };
+    /*
+    static_assert(BaseGrid_c<SparseRuntimeGrid<RuntimeSizeGrid<char>, SG_Allocator::defaultArena<>>>);
+    static_assert(BaseGrid_c<SparseRuntimeGrid<RuntimeSizeGrid<bool>, SG_Allocator::defaultArena<>>>);
+    static_assert(ConstructingGrid_c<SparseRuntimeGrid<RuntimeSizeGrid<char>, SG_Allocator::defaultArena<>>>);
+    static_assert(ConstructingGrid_c<SparseRuntimeGrid<RuntimeSizeGrid<bool>, SG_Allocator::defaultArena<>>>);
+    */
+    //TODO same as above
 }

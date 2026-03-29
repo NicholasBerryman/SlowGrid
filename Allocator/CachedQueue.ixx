@@ -20,8 +20,7 @@ export namespace SG_Allocator {
      * @tparam cacheSize Number of elements to store in the cache-oblivious part of the queue. NOT ACTUAL CPU CACHE SIZE
      * @tparam backlogCapacity Number of elements in the non-cache-oblivious part of the queue
      */
-    template<typename InsideArenaType, typename T, localSize_t cacheSize, arenaSize_t backlogCapacity>
-	requires std::is_base_of_v<BaseArena, InsideArenaType>
+    template<typename T, localSize_t cacheSize, OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t backlogCapacity>
     class CachedQueue {
         static_assert(cacheSize > 0, "CachedQueue must have cacheSize > 0");
     public:
@@ -34,9 +33,9 @@ export namespace SG_Allocator {
         inline void refresh();
         inline void clear();
         [[nodiscard]] inline localSize_t length() const;
-        [[nodiscard]] inline SG_Allocator::arenaSize_t cacheLength() const;
+        [[nodiscard]] inline InsideArenaType::arenaSize_t cacheLength() const;
         [[nodiscard]] inline localSize_t maxLength() const;
-        [[nodiscard]] inline SG_Allocator::arenaSize_t cacheMaxLength() const;
+        [[nodiscard]] inline InsideArenaType::arenaSize_t cacheMaxLength() const;
 
     private:
         InsideArenaType& _arena;
@@ -49,9 +48,8 @@ export namespace SG_Allocator {
  * @brief Constructor for cached queue
  * @param arena Arena object to store backlog in (cache-oblivious part is stored locally to the CachedQueue object)
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity>
-requires std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::CachedQueue(InsideArenaType& arena):
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::CachedQueue(InsideArenaType& arena):
 _arena(arena){
     backlog = arena.template allocConstruct<LocalDataStructures::Queue<T, totalCapacity>>();
 }
@@ -60,9 +58,8 @@ _arena(arena){
  * @brief Adds copy of element to back of queue
  * @param val Value to copy and push
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::push(const T& val) {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity> 
+void SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::push(const T& val) {
     LOGGER_ASSERT_EXCEPT(this->length() < this->maxLength());
     if (cache.length() < cacheSize) cache.push(val);
     else backlog->push(val);
@@ -72,9 +69,8 @@ void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pu
  * @brief Removes and returns front element of queue, looking in the cache-oblivious section first (FIFO). Usually cache-oblivious
  * @return Copy of front element of queue
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pop() {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity> 
+T SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::pop() {
     LOGGER_ASSERT_EXCEPT(cache.length() > 0 || backlog->length() > 0);
     if (cache.length() > 0) return cache.pop();
     return backlog->pop();
@@ -84,9 +80,8 @@ T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pop()
  * @brief Removes and returns front element from cache-oblivious section of queue (FIFO). Will never look at the backlog. Guaranteed cache-oblivious and slightly faster than pop() if there are elements in this section
  * @return Copy of front element from the cache-oblivious section of the queue
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::popUnsafe() {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity> 
+T SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::popUnsafe() {
     LOGGER_ASSERT_EXCEPT(cache.length() > 0);
     return cache.pop();
 }
@@ -96,9 +91,8 @@ T SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::popUn
  * @param offset Number of elements from front to skip over. Looks in cache-oblivious section first
  * @return Reference to the element of the queue with the specified offset from the front (FIFO)
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::peek(localSize_t offset) {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity> 
+T & SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::peek(localSize_t offset) {
     LOGGER_ASSERT_EXCEPT(cache.length() + backlog->length() > offset);
     if (cache.length() > offset) return cache.peekRef(offset);
     return backlog->peekRef(offset-cache.length());
@@ -109,9 +103,8 @@ T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::pee
  * @param offset Number of elements from front to skip over. Only looks inside cache-oblivious section (marginally faster than peek)
  * @return Reference to the element of the cache-oblivious section of the queue with the specified offset from the front (FIFO)
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-const T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::peekUnsafe(localSize_t offset) {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+const T & SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::peekUnsafe(localSize_t offset) {
     LOGGER_ASSERT_EXCEPT(cache.length() > offset);
     return cache.peekRef(offset);
 }
@@ -119,18 +112,16 @@ const T & SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity
 /**
  * Refill the cache-oblivious section from the backlog. Guarantees cache-oblivious behaviour from the next cacheSize pops, but is not itself cache-oblivious
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::refresh() {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+void SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::refresh() {
     while (cache.length() < cacheSize) cache.push(backlog->pop());
 }
 
 /**
  * Sets the queue length to zero and removes all elements. DOES NOT CALL DESTRUCTORS
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::clear() {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+void SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::clear() {
     cache.clear();
     backlog->clear();
 }
@@ -139,9 +130,8 @@ void SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::cl
  *
  * @return Number of elements available to be popped from the queue
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-localSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::length() const {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+localSize_t SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::length() const {
     return cache.length() + backlog->length();
 }
 
@@ -149,9 +139,8 @@ localSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapaci
  *
  * @return Number of elements available to be popped from the cache-oblivious section of the queue
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires std::
-is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-SG_Allocator::arenaSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::cacheLength() const {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+InsideArenaType::arenaSize_t SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::cacheLength() const {
     return cache.length();
 }
 
@@ -159,9 +148,8 @@ SG_Allocator::arenaSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSiz
  *
  * @return Max number of elements that can fit in the queue
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires
-std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-localSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::maxLength() const {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+localSize_t SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::maxLength() const {
     return cache.maxLength() + backlog->maxLength();
 }
 
@@ -169,9 +157,8 @@ localSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapaci
  *
  * @return Max number of elements that can be stored in the cache-oblivious section before overflowing into the backlog
  */
-template<typename InsideArenaType, typename T, localSize_t cacheSize, SG_Allocator::arenaSize_t totalCapacity> requires
-std::is_base_of_v<SG_Allocator::BaseArena, InsideArenaType>
-SG_Allocator::arenaSize_t SG_Allocator::CachedQueue<InsideArenaType, T, cacheSize, totalCapacity>::cacheMaxLength() const {
+template<typename T,  localSize_t cacheSize, SG_Allocator::OptionalArena_c<T> InsideArenaType, typename InsideArenaType::arenaSize_t totalCapacity>
+InsideArenaType::arenaSize_t SG_Allocator::CachedQueue<T, cacheSize, InsideArenaType, totalCapacity>::cacheMaxLength() const {
     return cache.maxLength();
 }
 

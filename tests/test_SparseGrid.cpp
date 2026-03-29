@@ -43,7 +43,7 @@ void testOnStack() {
 template <typename T>
 void testRuntimeSized() {
     SG_Allocator::Arena_ULL<10000,2> arena;
-    SG_Grid::SparseRuntimeGrid<decltype(arena), SG_Grid::RuntimeSizeGrid<T, false>> grid(arena, 2,1,3,3) ;
+    SG_Grid::SparseRuntimeGrid<SG_Grid::RuntimeSizeGrid<T, false>, decltype(arena)> grid(arena, 2,1,3,3) ;
 
     grid.loadChunk({0,0});
 
@@ -73,14 +73,12 @@ void testRuntimeSized() {
 
 }
 
-#define testA SG_Grid::SparseRuntimeGrid<decltype(arena), SG_Grid::RuntimeSizeGrid<T, false, true>> grid2(arena, 2,1,5,4);
+#define testA SG_Grid::SparseRuntimeGrid<SG_Grid::RuntimeSizeGrid<T, false, true>, decltype(arena)> grid2(arena, 2,1,5,4);
 template <typename T>
 void testRuntimeSized2Power() {
     SG_Allocator::Arena_ULL<10000,2> arena;
     LOGGER_ASSERT_ERROR( testA )
-    SG_Grid::SparseRuntimeGrid<decltype(arena), SG_Grid::RuntimeSizeGrid<T, false, true>> grid(arena, 2,1,4,4) ;
-
-
+    SG_Grid::SparseRuntimeGrid<SG_Grid::RuntimeSizeGrid<T, false, true>, decltype(arena)> grid(arena, 2,1,4,4) ;
 
     grid.loadChunk({0,0});
 
