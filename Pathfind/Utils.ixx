@@ -7,6 +7,7 @@ module;
 
 export module SG_Pathfind:Utils;
 import LocalDataStructures;
+import SG_Allocator;
 import SG_Grid;
 import :GridRangeHashMap;
 import :STDHashMap;
@@ -19,8 +20,8 @@ export namespace SG_Pathfind::Utils {
     template <typename T> concept Dmat_c = HashMap::GridHashmap_c<T,SG_Grid::u_coordinate_t>;
 
     template <const SG_Grid::u_coordinate_t maxOutputNodes = 256> using defaultPath_t = LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>;
-    template <typename ArenaType, bool useSTD = false> using defaultFlowfield_t = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::Point>,          HashMap::GridRangeHashMap<ArenaType,SG_Grid::Point>>;
-    template <typename ArenaType, bool useSTD = false> using defaultDmatrix_t   = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<ArenaType,SG_Grid::u_coordinate_t>>;
+    template <SG_Allocator::BaseArena_c<char,char> ArenaType, bool useSTD = false> using defaultFlowfield_t = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::Point>,          HashMap::GridRangeHashMap<ArenaType,SG_Grid::Point>>;
+    template <SG_Allocator::BaseArena_c<char,char> ArenaType, bool useSTD = false> using defaultDmatrix_t   = std::conditional_t<useSTD, HashMap::STDHashMap<ArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<ArenaType,SG_Grid::u_coordinate_t>>;
 
     
     //TODO probably prioritise horizontal movement first (might reduce weird movement for queen's case) -> might need to update unit tests to account
@@ -40,13 +41,31 @@ export namespace SG_Pathfind::Utils {
         { 0, 1},
         {-1, 0}
     });
-    template <bool QueensCase> const auto& AvailableMoves(){ if constexpr (QueensCase) return QueenMoves; else return RookMoves; }
+    template <bool QueensCase> inline const auto& AvailableMoves(){ if constexpr (QueensCase) return QueenMoves; else return RookMoves; }
+
+    template <bool Dijkstra = false, bool queensCase = false>
+    inline auto HeuristicRange(const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint_, const SG_Grid::u_coordinate_t& searchDistance) {
+        if constexpr (!Dijkstra) {
+            if constexpr (queensCase) {
+                return SG_Grid::Point(
+                     SG_Grid::Distance::Chebyshev(startPoint, endPoint_) + searchDistance + searchDistance
+                    ,SG_Grid::Distance::Chebyshev(startPoint, endPoint_));
+            } else {
+                return SG_Grid::Point(
+                     SG_Grid::Distance::Manhattan(startPoint, endPoint_) + searchDistance + searchDistance
+                    ,SG_Grid::Distance::Manhattan(startPoint, endPoint_));
+            }
+        } else {
+            return SG_Grid::Point( searchDistance,0);
+        }
+    }
+
 
     //TODO add some string-pulling functions, so we can get nicer paths esp in QueensCase
         // Add a grid-bound string pull function
         // Add an any-direction string pull function
     template <typename HashMap_t, typename Out_t, const SG_Grid::u_coordinate_t maxOutputNodes = 256>
-    auto FlowfieldToPath(Out_t& out, const SG_Grid::Point& examine, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const HashMap_t& visited){
+    inline auto FlowfieldToPath(Out_t& out, const SG_Grid::Point& examine, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const HashMap_t& visited){
         if (examine == endPoint){ // Only return a path if we found one
             auto trace = endPoint;
             auto dir = SG_Grid::Point(0,0);

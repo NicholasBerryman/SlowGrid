@@ -27,14 +27,14 @@ const SG_Grid::u_coordinate_t& min(const SG_Grid::u_coordinate_t& a, const SG_Gr
 
 
 export namespace SG_Pathfind::HashMap {
-    template<typename insideArena_t, typename value_t = bool, bool useContains=true, bool useBitfield=true, uint8_t partitionContains=0, uint8_t partitionGet=0, bool is2Power = false>
+    template<SG_Allocator::BaseArena_c<char,char> insideArena_t, typename value_t = bool, bool useContains=true, bool useBitfield=true, uint8_t partitionContains=0, uint8_t partitionGet=0, bool is2Power = false>
     class GridRangeHashMap{
     private:    
         static constexpr uint8_t partitionGet_ = []{if constexpr (std::is_same_v<value_t, bool>) return partitionContains; else return partitionGet;}();
         static constexpr bool useContains_  = useContains || std::is_same_v<value_t, bool>;
     
     public:
-        template <SG_Grid::BaseGrid_c pathfindGrid_t>
+        template <SG_Grid::ReadableGrid_c pathfindGrid_t>
         inline GridRangeHashMap(insideArena_t& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::u_coordinate_t& distance) requires (!std::is_same_v<value_t, bool>):
             origin(max(0, centrePoint.x() - distance), max(0, centrePoint.y() - distance)),
             containsGrid(arena, partitionCount(partitionContains), partitionCount(partitionContains), innerWidth(within, centrePoint, distance) , innerHeight(within, centrePoint, distance)),

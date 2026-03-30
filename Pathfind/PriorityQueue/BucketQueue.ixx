@@ -5,6 +5,7 @@ module;
 #include <type_traits>
 #include "Logger.h"
 #include <cstring>
+#include <concepts>
 
 //#include <iostream>
 
@@ -17,7 +18,7 @@ import SG_Allocator;
 
 //TODO make const correct, along with the other priority queues
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename T, typename priority_t, typename bucketSize_t, typename InsideArenaType, bool fullDecreaseKey = true, bool fifoOnTie = false>
+    template<typename T, std::integral priority_t, std::integral bucketSize_t, SG_Allocator::BaseArena_c<char,char> InsideArenaType, bool fullDecreaseKey = true, bool fifoOnTie = false>
     class BucketQueue : private BasePriorityQueue<T, priority_t>{
         static_assert(std::is_integral_v<priority_t>, "Priority must be an integral type.");
     public:
@@ -98,7 +99,7 @@ export namespace SG_Pathfind::PriorityQueue {
 
         inline void* forceInsert(const T& value, const priority_t& priority ) {
             LOGGER_ASSERT_EXCEPT(priority <= maxP)
-            LOGGER_ASSERT_EXCEPT(priority >= minIndex)
+            LOGGER_ASSERT_EXCEPT(priority >= encodePriority(minPriority))
 
             if (priority > maxIndex) maxIndex = priority;
             if (priority < minIndex) minIndex = priority;

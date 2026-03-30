@@ -15,7 +15,7 @@ import SG_Grid;
 import SG_Allocator;
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename T, typename priority_t, typename InsideArenaType, bool fullDecreaseKey = true, bool fifoOnTie = true , bool queensCase = true, uint8_t reserveDivisor = 4>
+    template<typename T, std::integral priority_t, SG_Allocator::BaseArena_c<char,char> InsideArenaType, bool fullDecreaseKey = true, bool fifoOnTie = true , bool queensCase = true, uint8_t reserveDivisor = 4>
     class BinaryHeap : private BasePriorityQueue<T, priority_t>{
         public:
             BinaryHeap(InsideArenaType& arena, const priority_t& maxPriority_, const priority_t& minPriority_ = 0) requires (!queensCase):

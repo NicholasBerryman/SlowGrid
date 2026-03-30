@@ -12,17 +12,22 @@ import Logger;
 
 export namespace SG_Grid {
     template <typename T>
-    concept BaseGrid_c  = requires(T t, Point p, typename T::value_type v, char c)
+    concept ReadableGrid_c = requires (T t, Point p, typename T::value_type v)
     {
         typename T::value_type;
         {t.get(p)} -> std::convertible_to<typename T::value_type>;
-        {t.set(p, v)};
         {t.width()} -> std::convertible_to<u_coordinate_t>;
         {t.height()} -> std::convertible_to<u_coordinate_t>;
-        {t.fill(v)};
-        {t.fill_memset(c)};
     };
 
+    template <typename T>
+    concept BaseGrid_c  = requires(T t, Point p, typename T::value_type v, char c)
+    {
+        typename T::value_type;
+        {t.set(p, v)};
+        {t.fill(v)};
+        {t.fill_memset(c)};
+    } && ReadableGrid_c<T>;
 
     template <typename T, typename... canAllocArgs>
     concept ConstructingGrid_c  = requires(T t, Point p, typename T::value_type v, char c, canAllocArgs... args)

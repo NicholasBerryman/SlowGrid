@@ -11,13 +11,13 @@ import SG_Allocator;
 import SG_Grid;
 import SG_Pathfind;
 
-#define AStar1_1(STD, heap, fifo, useHs) SG_Pathfind::AStar::AStar_Point<decltype(arena),decltype(arena), decltype(grid), true, 256, STD, heap, fifo, useHs>
-#define AStar2_1(STD, heap, fifo, useHs) SG_Pathfind::AStar::Dijkstra_Flowfield<decltype(arena),decltype(arena), decltype(grid), true, STD, heap, fifo, useHs>
-#define AStar3_1(STD, heap, fifo, useHs) SG_Pathfind::AStar::Dijkstra_Dmatrix<decltype(arena),decltype(arena), decltype(grid), true, STD, heap, fifo, useHs>
+#define AStar1_1(STD, heap, fifo, useHs) SG_Pathfind::AStar::Bench::AStar_Point_<256, true, STD, heap, fifo, useHs>
+#define AStar2_1(STD, heap, fifo, useHs) SG_Pathfind::AStar::Bench::Dijkstra_Flowfield_<true, STD, heap, fifo, useHs>
+#define AStar3_1(STD, heap, fifo, useHs) SG_Pathfind::AStar::Bench::Dijkstra_Dmatrix_<true, STD, heap, fifo, useHs>
 
-#define AStar1_2(STD,heap, fifo, useHs) SG_Pathfind::AStar::AStar_Point<decltype(arena),decltype(arena), decltype(grid), false, 256, STD, heap, fifo, useHs>
-#define AStar2_2(STD,heap, fifo, useHs) SG_Pathfind::AStar::Dijkstra_Flowfield<decltype(arena),decltype(arena), decltype(grid), false, STD, heap, fifo, useHs>
-#define AStar3_2(STD,heap, fifo, useHs) SG_Pathfind::AStar::Dijkstra_Dmatrix<decltype(arena),decltype(arena), decltype(grid), false, STD, heap, fifo, useHs>
+#define AStar1_2(STD,heap, fifo, useHs) SG_Pathfind::AStar::Bench::AStar_Point_<256, false, STD, heap, fifo, useHs>
+#define AStar2_2(STD,heap, fifo, useHs) SG_Pathfind::AStar::Bench::Dijkstra_Flowfield_<false, STD, heap, fifo, useHs>
+#define AStar3_2(STD,heap, fifo, useHs) SG_Pathfind::AStar::Bench::Dijkstra_Dmatrix_<false, STD, heap, fifo, useHs>
 
 
 #define p2plen(command, len, start, dist) { \

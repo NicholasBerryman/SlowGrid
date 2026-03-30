@@ -53,27 +53,36 @@ export namespace SG_Grid {
         inline T& get(const Point& at) requires (!isBitfield) { return const_cast<T &>(std::as_const(*this).get(at)); }
 
 
-        inline void set(const Point& at, const T& value) requires (isBitfield) {
+        inline void set(const Point& at, const T& value) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
-            if (value) smartFind(at.x(),at.y()) |= (1 << (at.x()%8));
-            else smartFind(at.x(),at.y()) &= ~(1 << (at.x()%8));
+            if constexpr (!isBitfield) {
+                smartFind(at.x(),at.y()) = value;
+            } else {
+                if (value) smartFind(at.x(),at.y()) |= (1 << (at.x()%8));
+                else smartFind(at.x(),at.y()) &= ~(1 << (at.x()%8));
+            }
         }
-        inline void set(const Point& at, const T& value) requires (!isBitfield) {
+        /*inline void set(const Point& at, const T& value) requires (!isBitfield) {
             LOGGER_ASSERT_EXCEPT(at.x() >= 0 && at.y() >= 0 && at.x() < width() && at.y() < height());
             smartFind(at.x(),at.y()) = value;
+        }*/
+        inline void fill(const T& value) {//requires (!isBitfield){
+            if constexpr (!isBitfield) {
+                for (int x = 0; x < internalWidth(width()); x++)
+                    for (int y = 0; y < height(); y++)
+                        find(x,y) = value;
+            } else {
+                for (int x = 0; x < internalWidth(width()); x++)
+                    for (int y = 0; y < height(); y++) {
+                        if (value) find(x,y) = ~0;
+                        else find(x,y) = 0;
+                    }
+            }
+
         }
-        inline void fill(const T& value) requires (!isBitfield){
-            for (int x = 0; x < internalWidth(width()); x++)
-                for (int y = 0; y < height(); y++)
-                    find(x,y) = value;
-        }
-        inline void fill(const T& value) requires (isBitfield){
-            for (int x = 0; x < internalWidth(width()); x++)
-                for (int y = 0; y < height(); y++) {
-                    if (value) find(x,y) = ~0;
-                    else find(x,y) = 0;
-                }
-        }
+        /*inline void fill(const T& value) requires (isBitfield){
+
+        }*/
         inline void fill_memset(const char& toFill){
             if constexpr (width_ != 0) std::memset(&(impl[0]), toFill, height_ * compileTimeInternalWidth());
             else std::memset(impl.impl(), toFill, height() * internalWidth(width()) * sizeof(internalT));

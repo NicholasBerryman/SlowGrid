@@ -15,7 +15,7 @@ import :BucketQueue;
 
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = false, bool noHashSet = false>
+    template<SG_Allocator::BaseArena_c<char,char> InsideArenaType, SG_Grid::ReadableGrid_c pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = false, bool noHashSet = false>
     class HashMapBucketQueue {
     public:
         HashMapBucketQueue(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :

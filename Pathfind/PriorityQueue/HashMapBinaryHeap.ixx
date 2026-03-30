@@ -14,7 +14,7 @@ import :GridRangeHashMap;
 import :BinaryHeap;
 
 export namespace SG_Pathfind::PriorityQueue {
-    template<typename InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool noHashSet = false>
+    template<SG_Allocator::BaseArena_c<char,char> InsideArenaType, typename pathfindGrid_t, bool fullDecreaseKey = true, bool fifoOnTie = true, bool noHashSet = false>
     class HashMapBinaryHeap {
     public:
         HashMapBinaryHeap(InsideArenaType& arena, const pathfindGrid_t& within, const SG_Grid::Point& centrePoint, const SG_Grid::coordinate_t& maxDistanceChebyshev, const SG_Grid::coordinate_t& maxCost, const SG_Grid::coordinate_t& minCost = 0) :

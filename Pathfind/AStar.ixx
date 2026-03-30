@@ -24,32 +24,20 @@ import :STDPriorityQueue;
 
 //TODO make it default to heap when non-integer Grid_t::T
 namespace SG_Pathfind::AStar {
-    template<bool useSTD, bool useHeap, bool tryFifo, bool useHashset, bool queensCase, bool Flowfield, typename WorkingArenaType, typename Grid_t>
-    SG_Grid::Point AStar_Base(WorkingArenaType& arena, const Grid_t& OnGrid, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance, auto& visited, auto& flow, auto& directions, const SG_Grid::Point& endPoint_ = {0,0}){
+    template<bool useSTD, bool useHeap, bool tryFifo, bool useHashset, bool queensCase, bool Flowfield>
+    SG_Grid::Point AStar_Base(SG_Allocator::BaseArena_c<char, char> auto& arena, const SG_Grid::ReadableGrid_c auto& OnGrid, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance, auto& visited, auto& flow, auto& directions, const SG_Grid::Point& endPoint_ = {0,0}){
+        using arena_t = std::remove_reference_t<decltype(arena)>;
+        using grid_t = std::remove_reference_t<decltype(OnGrid)>;
         typedef std::conditional_t<useSTD,
-            PriorityQueue::STDPriorityQueue<WorkingArenaType, Grid_t, false, tryFifo, !useHashset>,
+            PriorityQueue::STDPriorityQueue<arena_t, grid_t, false, tryFifo, !useHashset>,
             std::conditional_t<useHeap,
-                PriorityQueue::HashMapBinaryHeap<WorkingArenaType, Grid_t, false, tryFifo, !useHashset>,
-                PriorityQueue::HashMapBucketQueue<WorkingArenaType, Grid_t, false, tryFifo, !useHashset>>> queue_t; \
+                PriorityQueue::HashMapBinaryHeap<arena_t, grid_t, false, tryFifo, !useHashset>,
+                PriorityQueue::HashMapBucketQueue<arena_t, grid_t, false, tryFifo, !useHashset>>> queue_t; \
 
-        SG_Grid::u_coordinate_t pmax;
-        SG_Grid::u_coordinate_t pmin;
-        if constexpr (!Flowfield) {
-            if constexpr (queensCase) {
-                pmax = SG_Grid::Distance::Chebyshev(startPoint, endPoint_) + searchDistance + searchDistance;
-                pmin = SG_Grid::Distance::Chebyshev(startPoint, endPoint_);
-            } else {
-                pmax = SG_Grid::Distance::Manhattan(startPoint, endPoint_) + searchDistance + searchDistance;
-                pmin = SG_Grid::Distance::Manhattan(startPoint, endPoint_);
-            }
-        } else {
-            pmax = searchDistance;
-            pmin = 0;
-        }
-
-        queue_t frontier(arena, OnGrid, startPoint, searchDistance, pmax, pmin);
+        auto weightRange = Utils::HeuristicRange<Flowfield, queensCase>(startPoint, endPoint_, searchDistance);
+        queue_t frontier(arena, OnGrid, startPoint, searchDistance, weightRange.x(), weightRange.y());
         visited.insert(startPoint, 0);
-        frontier.insert(startPoint,pmin);
+        frontier.insert(startPoint,weightRange.y());
         SG_Grid::Point examine = startPoint;
         while (frontier.length() > 0) {
             examine = frontier.extractMin();
@@ -58,7 +46,7 @@ namespace SG_Pathfind::AStar {
                 if (!(next.on(OnGrid))) continue; /* Don't look past the grid bounds */
                 if (OnGrid.get(next)) { /* Not a wall (0 = wall)*/
                     SG_Grid::u_coordinate_t nextPriority;
-                    if (visited.get(examine) + OnGrid.get(next) > searchDistance) continue; //TODO try and use this to get 'close enough' paths when we run out of range -> maybe just goto from here??
+                    if (visited.get(examine) + OnGrid.get(next) > searchDistance) continue;
                     if constexpr (Flowfield) nextPriority = visited.get(examine) + OnGrid.get(next);
                     else if constexpr (queensCase)  nextPriority = visited.get(examine) + OnGrid.get(next) + SG_Grid::Distance::Chebyshev(next, endPoint_);
                     else if constexpr (!queensCase) nextPriority = visited.get(examine) + OnGrid.get(next) + SG_Grid::Distance::Manhattan(next, endPoint_);
@@ -77,55 +65,77 @@ namespace SG_Pathfind::AStar {
     }
 }
 
-#define SG_PATHFIND_AStar(Flowfield) AStar_Base<useSTD, useHeap, tryFifo, useHashset, queensCase, Flowfield, WorkingArenaType, Grid_t>
+#define SG_PATHFIND_AStar(Flowfield) AStar_Base<useSTD, useHeap, tryFifo, useHashset, queensCase, Flowfield>
 
 
-export namespace SG_Pathfind::AStar {
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true, const SG_Grid::u_coordinate_t maxOutputNodes = 256, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true> //TODO make a default number for maxOutputNodes in a config file
-    LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>&  AStar_Point(const Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+namespace SG_Pathfind::AStar {
+    template<std::uint8_t type, bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+    inline auto&  AStar_Pathfind(auto& out, SG_Allocator::BaseArena_c<char, char> auto& arena, const SG_Grid::ReadableGrid_c auto& OnGrid, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance, const SG_Grid::Point& endPoint = {0,0}) {
         LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
-        LOGGER_ASSERT_EXCEPT(endPoint.on(OnGrid));
+        using arena_t = std::remove_reference_t<decltype(arena)>;
+        if constexpr (type == 0) {LOGGER_ASSERT_EXCEPT(endPoint.on(OnGrid));}
         auto& directions = Utils::AvailableMoves<queensCase>();
-        typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::u_coordinate_t>> visited_t;
-        typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::Point, false>> flow_t;
-        auto& out(*(outArena.template allocConstruct<LocalDataStructures::Stack<SG_Grid::Point, maxOutputNodes>>()));
 
         arena.sublifetime_open();
-        visited_t visited(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
-        flow_t flow(arena, OnGrid, startPoint, searchDistance); //Should map a Point to a direction -> Flowfield
-        auto examine = SG_PATHFIND_AStar(false)(arena, OnGrid, startPoint, searchDistance, visited, flow, directions, endPoint);
-        Utils::FlowfieldToPath(out, examine, startPoint, endPoint, flow);
+        if constexpr (type == 0) { // 0 = P2P
+            Utils::defaultFlowfield_t<arena_t, useSTD> flow(arena, OnGrid, startPoint, searchDistance);
+            Utils::defaultDmatrix_t  <arena_t, useSTD> visited(arena, OnGrid, startPoint, searchDistance);
+            auto examine = SG_PATHFIND_AStar(false)(arena, OnGrid, startPoint, searchDistance, visited, flow, directions, endPoint);
+            Utils::FlowfieldToPath(out, examine, startPoint, endPoint, flow);
+        }
+        if constexpr (type == 1) {
+            // 1 = Flowfield
+            Utils::defaultDmatrix_t<arena_t, useSTD> visited(arena, OnGrid, startPoint, searchDistance);
+            auto examine = SG_PATHFIND_AStar(false)(arena, OnGrid, startPoint, searchDistance, visited, out, directions);
+        }
+        if constexpr (type == 2) {
+            // 2 = Distance Matrix
+            Utils::defaultFlowfield_t <arena_t, useSTD> flow(arena, OnGrid, startPoint, searchDistance);
+            auto examine = SG_PATHFIND_AStar(false)(arena, OnGrid, startPoint, searchDistance, out, flow, directions);
+        }
+        if constexpr (type == 4) { // 4 = Flowfield + Distance
+            // (TODO!!!!) using std::pair as out type
+        }
         arena.sublifetime_rollback();
         return out;
     }
-    
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
-    auto&  Dijkstra_Flowfield(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
-        LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
-        auto& directions = Utils::AvailableMoves<queensCase>();
-        typedef std::conditional_t<useSTD, HashMap::STDHashMap<OutputArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<OutputArenaType,SG_Grid::u_coordinate_t>> visited_t;
-        typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::Point, true>> flow_t;
-        auto& flow(*outArena.template allocConstruct<flow_t>(outArena, OnGrid, startPoint, searchDistance));
+}
 
-        arena.sublifetime_open();
-        visited_t visited(arena, OnGrid, startPoint, searchDistance);
-        SG_PATHFIND_AStar(true)(arena, OnGrid, startPoint, searchDistance, visited, flow, directions);
-        arena.sublifetime_rollback();
-        return flow;
+
+export namespace SG_Pathfind::AStar {
+    template<bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+    auto& AStar_Point(Utils::Path_c auto& out, SG_Allocator::BaseArena_c<char, char> auto& arena, const SG_Grid::ReadableGrid_c auto& OnGrid, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+        return AStar_Pathfind<0, queensCase, useSTD, useHeap, tryFifo, useHashset>(out, arena, OnGrid, startPoint, searchDistance, endPoint);
     }
-    
-    template<typename WorkingArenaType, typename OutputArenaType, typename Grid_t, bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
-    auto& Dijkstra_Dmatrix(Grid_t& OnGrid, WorkingArenaType& arena, OutputArenaType& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
-        LOGGER_ASSERT_EXCEPT(startPoint.on(OnGrid));
-        auto& directions = Utils::AvailableMoves<queensCase>();
-        typedef std::conditional_t<useSTD, HashMap::STDHashMap<OutputArenaType,SG_Grid::u_coordinate_t>, HashMap::GridRangeHashMap<OutputArenaType,SG_Grid::u_coordinate_t>> visited_t;
-        typedef std::conditional_t<useSTD, HashMap::STDHashMap<WorkingArenaType,SG_Grid::Point>, HashMap::GridRangeHashMap<WorkingArenaType,SG_Grid::Point, false>> flow_t;
-        auto& visited(*outArena.template allocConstruct<visited_t>(outArena, OnGrid, startPoint, searchDistance));
 
-        arena.sublifetime_open();
-        flow_t flow(arena, OnGrid, startPoint, searchDistance);
-        SG_PATHFIND_AStar(true)(arena, OnGrid, startPoint, searchDistance, visited, flow, directions);
-        arena.sublifetime_rollback();
-        return visited;
+    template<bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+    auto& Dijkstra_Flowfield(Utils::Flowfield_c auto& out, SG_Allocator::BaseArena_c<char, char> auto& arena, const SG_Grid::ReadableGrid_c auto& OnGrid, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+        return AStar_Pathfind<1, queensCase, useSTD, useHeap, tryFifo, useHashset>(out, arena, OnGrid, startPoint, searchDistance);
+    }
+
+    template<bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+    auto& Dijkstra_Dmatrix(Utils::Dmat_c auto& out, SG_Allocator::BaseArena_c<char, char> auto& arena, const SG_Grid::ReadableGrid_c auto& OnGrid, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+        return AStar_Pathfind<2, queensCase, useSTD, useHeap, tryFifo, useHashset>(out, arena, OnGrid, startPoint, searchDistance);
+    }
+
+
+    namespace Bench{
+        template<const SG_Grid::u_coordinate_t maxOutputNodes = 256, bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+        auto& AStar_Point_(const SG_Grid::ReadableGrid_c auto& OnGrid, SG_Allocator::BaseArena_c<char, char> auto& arena, SG_Allocator::BaseArena_c<char, char> auto& outArena, const SG_Grid::Point& startPoint, const SG_Grid::Point& endPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+            auto& out(*(outArena.template allocConstruct<Utils::defaultPath_t<maxOutputNodes>>()));
+            return AStar_Point<queensCase, useSTD, useHeap, tryFifo, useHashset>(out, arena, OnGrid, startPoint, endPoint, searchDistance);
+        }
+
+        template<bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+        auto& Dijkstra_Flowfield_(const SG_Grid::ReadableGrid_c auto& OnGrid, SG_Allocator::BaseArena_c<char, char> auto& arena, SG_Allocator::BaseArena_c<char, char> auto& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+            auto& out(*outArena.template allocConstruct<Utils::defaultFlowfield_t<std::remove_reference_t<decltype(outArena)>, useSTD>>(outArena, OnGrid, startPoint, searchDistance));
+            return Dijkstra_Flowfield<queensCase, useSTD, useHeap, tryFifo, useHashset>(out, arena, OnGrid, startPoint, searchDistance);
+        }
+
+        template<bool queensCase = true, bool useSTD = false, bool useHeap = false, bool tryFifo = false, bool useHashset = true>
+        auto& Dijkstra_Dmatrix_(const SG_Grid::ReadableGrid_c auto& OnGrid, SG_Allocator::BaseArena_c<char, char> auto& arena, SG_Allocator::BaseArena_c<char, char> auto& outArena, const SG_Grid::Point& startPoint, const SG_Grid::u_coordinate_t& searchDistance) {
+            auto& out(*outArena.template allocConstruct<Utils::defaultDmatrix_t<std::remove_reference_t<decltype(outArena)>, useSTD>>(outArena, OnGrid, startPoint, searchDistance)); //Should map a Point to a distance -> Distance Matrix
+            return Dijkstra_Dmatrix<queensCase, useSTD, useHeap, tryFifo, useHashset>(out, arena, OnGrid, startPoint, searchDistance);
+        }
     }
 }
