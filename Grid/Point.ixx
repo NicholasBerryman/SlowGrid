@@ -4,6 +4,8 @@
 module;
 #include <cstdlib>
 #include <cmath>
+#include <algorithm>
+#include <numbers>
 
 export module SG_Grid:Point;
 import SG_GridConfigs;
@@ -62,10 +64,10 @@ export namespace SG_Grid {
 
     namespace Bearing {
         float_distance_t TrueBearing(const Point& from, const Point& to){return atan2(to.x()-from.x(), to.y()-from.y()); }
-        float_distance_t QueensBearing(const Point& from, const Point& to){ return roundToNearestMultiple(TrueBearing(from, to),0.25*M_PI);}
-        float_distance_t RooksBearing(const Point& from, const Point& to){ return roundToNearestMultiple(TrueBearing(from, to),0.5*M_PI);}
+        float_distance_t QueensBearing(const Point& from, const Point& to){ return roundToNearestMultiple(TrueBearing(from, to),0.25*std::numbers::pi);}
+        float_distance_t RooksBearing(const Point& from, const Point& to){ return roundToNearestMultiple(TrueBearing(from, to),0.5*std::numbers::pi);}
 
-        coordinate_t rad2deg(const float_distance_t rad) { return static_cast<SG_Grid::coordinate_t>(rad * 180.0 / M_PI); }
-        float_distance_t deg2rad(const coordinate_t deg) { return deg * M_PI / 180; }
+        coordinate_t rad2deg(const float_distance_t rad) { return static_cast<SG_Grid::coordinate_t>(rad * 180.0 / std::numbers::pi); }
+        float_distance_t deg2rad(const coordinate_t deg) { return deg * std::numbers::pi / 180; }
     }
 }

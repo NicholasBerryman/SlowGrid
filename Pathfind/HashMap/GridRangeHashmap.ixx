@@ -8,6 +8,7 @@ module;
 #include "Logger.h"
 #include <cstdint>
 #include <utility>
+#include <bit>
 
 export module SG_Pathfind:GridRangeHashMap;
 import :BaseHashMap;

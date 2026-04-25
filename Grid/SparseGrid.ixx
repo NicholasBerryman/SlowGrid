@@ -3,7 +3,7 @@
 //
 module;
 #include "Logger.h"
-#include <type_traits>
+#include <bit>
 #include <iostream>
 #include <utility>
 

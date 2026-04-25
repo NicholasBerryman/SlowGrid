@@ -7,7 +7,8 @@ module;
 #include <chrono>
 #include <cassert>
 #include <filesystem>
-#include <stacktrace>
+//#include <stacktrace>
+#include <cpptrace/cpptrace.hpp>
 #include "Logger.h"
 
 #define F_LOG "Log.txt"
@@ -21,8 +22,9 @@ export module Logger;
 namespace Logging {
     bool init = false;
     std::string trace() {
-        auto trace = std::stacktrace::current();
-        return std::to_string(trace);
+        /*auto trace = std::stacktrace::current();
+        return std::to_string(trace);*/
+        return cpptrace::generate_trace().to_string();
     }
 
     /**

@@ -5,6 +5,7 @@ module;
 #include "Logger.h"
 #include <cstring>
 #include <utility>
+#include <bit>
 
 export module SG_Grid:FullGrid;
 import :Point;

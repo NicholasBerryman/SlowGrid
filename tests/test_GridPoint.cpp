@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include <iostream>
 #include <cmath>
+#include <numbers>
 #define assert Logging::assert_except
 
 import Logger;
@@ -45,8 +46,8 @@ void testOnStack(){
     assert(bearing > 0.9 && bearing < 1.0);
     assert(SG_Grid::Bearing::rad2deg(bearing) >= 56 && SG_Grid::Bearing::rad2deg(bearing) <= 57);
     assert(SG_Grid::Bearing::deg2rad(SG_Grid::Bearing::rad2deg(bearing)) > 0.85 && SG_Grid::Bearing::deg2rad(SG_Grid::Bearing::rad2deg(bearing)) < 1.05);
-    assert( std::fabs(SG_Grid::Bearing::QueensBearing(pt1, pt2) - 0.25*M_PI) < 0.1);
-    assert( std::fabs(SG_Grid::Bearing::RooksBearing(pt1, pt2) - 0.5*M_PI) < 0.1);
+    assert( std::fabs(SG_Grid::Bearing::QueensBearing(pt1, pt2) - 0.25* std::numbers::pi) < 0.1);
+    assert( std::fabs(SG_Grid::Bearing::RooksBearing(pt1, pt2) - 0.5* std::numbers::pi) < 0.1);
 }
 
 int main(int, char**) {
